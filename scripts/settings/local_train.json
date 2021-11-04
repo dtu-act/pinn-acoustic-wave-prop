@@ -1,0 +1,94 @@
+{
+    "id": "local_tests",
+    "base_dir": "/Users/nikolasborrel/data/pinn",
+
+    "c": 1,
+    "c_phys": 343,
+    "___COMMENT_fmax___": "2000Hz*c/343 = 5.8309 for c=1, =23.3236 for c=4",
+    "fmax": 5.8309,
+
+    "tmax": 4,
+    "xmin": -1,
+    "xmax": 1,
+    "source_pos": [-0.3,-0.2,-0.1,0.0,0.1,0.2,0.3],
+    
+    "sigma0": 0.2,
+    "rho": 1.2,
+    "ppw": 5,
+
+    "epochs": 2,
+    "stop_loss_value": 0.0002,
+
+    "do_transfer_learning": false,
+    
+    "batch_size": 512,
+    "learning_rate": 0.0001,
+    "optimizer": "adam",
+
+    "transfer_learning": {
+        "model_dir": "FREQ-DEP-sigma02_srcs3-lr05-25000",
+        "boundary_type": "IMPEDANCE_FREQ_DEP",
+        "trainable": true
+    },
+
+    "transfer_learning_neum": {
+        "model_dir": "NEUMANN-sigma02-srcs3",
+        "boundary_type": "NEUMANN",
+        "trainable": false
+    },
+    
+    "boundary_type": "IMPEDANCE_FREQ_DEP",
+    "data_filename": "freq_dep_1D_2000.00Hz_sigma0.2_c1_d0.10_srcs7.hdf5",
+
+    "boundary_type_neumann": "NEUMANN",
+    "data_filename_neumann": "neumann_1D_2000.00Hz_sigma0.2_c1.hdf5",
+
+    "boundary_type_dirich": "DIRICHLET",
+    "data_filename_dirich": "dirichlet_1D_2000.00Hz_sigma0.2_c1.hdf5",
+
+    "boundary_type_indep": "IMPEDANCE_FREQ_INDEP",
+    "data_filename_indep": "freq_indep_1D_2000.00Hz_sigma0.2_c1_xi5.83.hdf5",
+
+    "boundary_type_dep": "IMPEDANCE_FREQ_DEP",
+    "data_filename_dep": "freq_dep_1D_2000.00Hz_sigma0.2_c1_d0.10_srcs7.hdf5",
+
+    "__comment0__": "NN setting for the PDE",
+    "activation": "sin",
+    "num_layers": 3,
+    "num_neurons": 256,
+
+    "__comment1__": "NN setting for the auxillary differential ODE",
+    "activation_ade": "tanh",
+    "num_layers_ade": 3,
+    "num_neurons_ade": 20,
+
+    "impedance_data": {
+        "__comment1__": "xi is the acoustic impedance ONLY for freq. indep. boundaries",
+        "xi": 5.83,
+
+        "d": 0.1,
+        "type": "IMPEDANCE_FREQ_DEP",
+        "lambdas": [7.1109025021758407,205.64002739443146],
+        "alpha": [6.1969460587749818],
+        "beta": [-15.797795759219973],
+        "Yinf": 0.76935257750377573,
+        "A": [-7.7594660571346719,0.0096108036858666163],
+        "B": [-0.016951521199665469],
+        "C": [-2.4690553703530442]
+    },
+
+    "accumulator_factors": [10.26, 261.37, 45.88, 21.99],
+
+    "ic_points_distr": 0.25,
+    "bc_points_distr": 0.45,
+
+    "loss_penalties": {
+        "pde":1,
+        "ic":20,
+        "bc":1,
+        "ade":[10,10,10,10]
+    },
+
+    "verbose_out": true,
+    "show_plots": true
+}

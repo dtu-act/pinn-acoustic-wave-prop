@@ -1,0 +1,39 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [        
+        {
+            "name": "Python: TRAIN",
+            "type": "python",
+            "request": "launch",
+            "program": "main_train.py",
+            "args": [
+                "--path_settings",
+                "scripts/settings/local_train.json",
+            ],
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Python: TIMING",
+            "type": "python",
+            "request": "launch",
+            "program": "main_evaluate_timings.py",
+            "args": [
+                "--path_settings",
+                "scripts/settings/local_timings.json",
+                "--trained_model_tag",
+                "FREQ-DEP-sigma02_srcs7-FINAL"
+            ],
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal"
+        }
+    ]
+}
