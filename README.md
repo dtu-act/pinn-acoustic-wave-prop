@@ -3,6 +3,7 @@
 > * Allan P. Engsig-Karup (<apek@dtu.dk>)
 > * Cheol-Ho Jeong (<chj@elektro.dtu.dk>)
 
+# About
 Code for sound field predictions in domains with Neumann and impedance boundaries. Used for generating results from the paper "Physics-informed neural networks for 1D sound field predictions with parameterized sources and impedance boundaries" by N. Borrel-Jensen, A. P. Engsig-Karup, and C. Jeong.
 
 # Run
@@ -37,10 +38,13 @@ python3 main_evaluate_timings.py --path_settings="path/to/script.json" --trained
 ```
 The `trained_model_tag` is the directory with the trained model weights trained using the scripts located at the path given in `path_settings`.
 
-# Settings
+# Setup
+
+## Dependencies
+The library dependencies can be installed using the script `scripts/package_install.sh`.
 
 ## Input/output directory structure
-The input data should be located in a specific relative directory structure as (data used for the paper can be downloaded [here](http://www.todo.com))
+Data used for the paper can be downloaded [here](http://www.todo.com)). The input data should be located in a specific relative directory structure as 
 
 ```verbatim
 base_path/
@@ -49,7 +53,7 @@ base_path/
             checkpoint
             cp.ckpt.data-00000-of-00001
             cp.ckpt.index
-    training_data/
+    reference_data/
         freq_dep_1D_2000.00Hz_sigma0.2_c1_d0.02_srcs3.hdf5
         ...
         freq_indep_1D_2000.00Hz_sigma0.2_c1_xi5.83_srcs3.hdf5
@@ -57,7 +61,7 @@ base_path/
         neumann_1D_2000.00Hz_sigma0.2_c1_srcs3.hdf5
         ...
 ```
-The reference data are located inside the `training_data/` directory generated, where the data for impedance boundaries are generated using our SEM simulator, and for Neumann boundaries, the Python script `main_generate_analytical_data.py` was used.
+The reference data are located inside the `reference_data/` directory generated, where the data for impedance boundaries are generated using our SEM simulator, and for Neumann boundaries, the Python script `main_generate_analytical_data.py` was used.
 
 Output result data are located inside the `results` folder
 ```verbatim

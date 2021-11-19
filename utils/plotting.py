@@ -14,7 +14,7 @@ import matplotlib.animation as anim
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.gridspec import GridSpec
 
-import datahandlers.training_data_setup as training
+import datahandlers.reference_data_setup as ref
 import datahandlers.sciann_multidatagenerator as mdg
 from utils.dsp import get_fft_values
 
@@ -22,7 +22,7 @@ res = 160
 colormap = cm.magma_r #'Greys' #cm.cividis
 figsize_x, figsize_y = 8, 4
 
-def plotReference(training_data_path,tmax,plotnth=1,figs_dir=None):
+def plotReference(ref_data_path,tmax,plotnth=1,figs_dir=None):
     def subPlot(x_train, t_train, p_train, x0, fig, ax, plotnth=1):    
         p1 = ax.tricontourf(
             x_train[::plotnth], t_train[::plotnth], p_train[::plotnth], res, cmap=colormap)
@@ -32,7 +32,7 @@ def plotReference(training_data_path,tmax,plotnth=1,figs_dir=None):
         cax = divider.append_axes('right', size='5%', pad=0.05)
         fig.colorbar(p1, cax=cax, orientation='vertical')
 
-    xt_grid,p_data,_,x0_sources,_,_ = training.loadDataFromH5(training_data_path, tmax=tmax)    
+    xt_grid,p_data,_,x0_sources,_,_ = ref.loadDataFromH5(ref_data_path, tmax=tmax)
     data = mdg.MultiDataContainerXT(xt_grid)
 
     fig, _ = plt.subplots(int(np.ceil(len(x0_sources)/2)),
@@ -231,7 +231,7 @@ def plotScatter(x_data, t_data):
     plt.scatter(x_data, t_data, label='All data')
     plt.xlabel('x [m]')
     plt.ylabel('t [s]')
-    plt.legend(title="Training Data", bbox_to_anchor=(
+    plt.legend(title="Reference Data", bbox_to_anchor=(
         1.05, 1), loc='upper left')
     fig.tight_layout()    
     plt.show(block=False)

@@ -13,7 +13,7 @@ import os
 from numpy.testing._private.utils import assert_equal
 import models.sciann_models as models
 from models.datastructures import Domain, SourceType
-import datahandlers.training_data_setup as training
+import datahandlers.reference_data_setup as ref
 from setup.settings import Settings
 
 def plotGridSource(data, settings: Settings, tag=''):
@@ -69,7 +69,7 @@ def printSettings(path_to_settings):
     f.close()
 
 def validateData(settings: Settings):
-    training_data_path = settings.dirs.data_path
+    ref_data_path = settings.dirs.data_path
     
     xmin = settings.domain.xmin
     xmax = settings.domain.xmax
@@ -83,7 +83,7 @@ def validateData(settings: Settings):
     rho = settings.physics.rho
     sigma0 = settings.physics.sigma0
 
-    dt_load,dx_load,x0_sources_load,physics_load,tmax_load = training.loadAttrFromH5(training_data_path)
+    dt_load,dx_load,x0_sources_load,physics_load,tmax_load = ref.loadAttrFromH5(ref_data_path)
 
     assert physics_load.c == c, f'Settings and loaded data differs: c={c} !=  c_loaded={physics_load.c}'
     assert abs(physics_load.fmax - fmax) < 0.001, f'Settings and loaded data differs: fmax={fmax} !=  fmax_loaded={physics_load.fmax}'

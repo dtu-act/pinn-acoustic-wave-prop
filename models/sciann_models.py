@@ -17,6 +17,25 @@ from models.datastructures import ADENeuralNetwork, BoundaryCondition, BoundaryT
 from models.kernel_initializers import SineInitializer, first_layer_sine_init
 from setup.settings import Settings
 
+def loadModel(settings: Settings, funcs: SciannFunctionals, accs: Accumulators, data: DataGeneratorXT, target_indxs: TargetIndexes):
+    tl = settings.transfer_learning
+
+    m_pinn = setupPinnModels(settings, funcs, accs, boundary_cond_override=tl.boundary_cond)
+    targets_pinn = setupPinnTargetsTrain(data, target_indxs, tl.boundary_cond)
+
+    checkpoint_path = os.path.join(settings.dirs.transfer_models_dir, tl.model_dir)
+    latest = tf.train.latest_checkpoint(checkpoint_path)
+    if latest == None:
+        raise FileNotFoundError(f'Weights not found: %s', checkpoint_path)
+    m_pinn.load_weights(latest)
+
+    m_pinn.model.trainable = tl.trainable
+        
+    m_pinn.compile()
+    m_pinn.summary()
+
+    return m_pinn, targets_pinn
+
 def setupPinnModels(settings: Settings, funcs: SciannFunctionals, accs: Accumulators, 
     loss_type=LossType.PINN, boundary_cond_override: BoundaryCondition=None, plot_to_file: str=None):
     """ Setup the model for pinn """

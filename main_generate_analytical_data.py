@@ -12,7 +12,7 @@ import os
 import datahandlers.meshing as meshing
 import models.sources as sources
 from models.datastructures import Domain, Physics, SourceType, BoundaryType, SourceInfo
-import datahandlers.training_data_setup as training
+import datahandlers.reference_data_setup as ref
 import setup.configurations as configs
 import setup.parsers as parsers
 from utils.validations import plotGridSource, printGridStats
@@ -50,25 +50,25 @@ domain = Domain(xmin=-1, xmax=1, tmin=0, tmax=4, ppw=ppw, dt=dt, dx=dx, boundary
 src_tag = f'_srcs{len(x0_sources)}' if len(x0_sources) > 1 else ''
 filename = f"{boundary_type.lower()}_1D_{fmax_phys}Hz_sigma{physics.sigma0}_c{c}{src_tag}.hdf5"
 
-path_output_data = os.path.join(base_dir, f"training_data/uniform/{filename}")
+path_output_data = os.path.join(base_dir, f"reference_data/uniform/{filename}")
 
 printGridStats(domain)
 
 if grid_type == 'uniform':
     if not (boundary_cond.type == BoundaryType.DIRICHLET or boundary_cond.type == BoundaryType.NEUMANN):
-        raise Exception('Cannot generate training data for given boundary conditions')
+        raise Exception('Cannot generate reference data for given boundary conditions')
 
     data,x0_eval_data,target_sim_indxs = meshing.generateUniformMesh(domain)    
     xt_grid = list(map(lambda data_i: data_i[0], data)) # extract mesh into array    
-    p_eval_data = training.generateSolutionData1D(xt_grid, x0_sources, c, physics.sigma0, boundary_cond.type)
+    p_eval_data = ref.generateSolutionData1D(xt_grid, x0_sources, c, physics.sigma0, boundary_cond.type)
 elif grid_type == 'non-uniform':
     if not (boundary_cond.type == BoundaryType.DIRICHLET or boundary_cond.type == BoundaryType.NEUMANN):
-        raise Exception('Cannot generate training data for given boundary conditions')
+        raise Exception('Cannot generate reference data for given boundary conditions')
 
     data, x0_input_data, target_sim_indxs = meshing.generateNonUniformMesh(domain)
 
     xt_grid = list(map(lambda data_i: data_i[0], data)) # extract mesh into array        
-    p_eval_data = training.generateSolutionData1D(xt_grid, x0_sources, c, physics.sigma0, boundary_cond.type)
+    p_eval_data = ref.generateSolutionData1D(xt_grid, x0_sources, c, physics.sigma0, boundary_cond.type)
     x0_eval_data = np.asarray([[x0,]*len(data[i][0][0]) for i,x0 in enumerate(x0_sources)])
 else:
     raise NotImplementedError()
@@ -76,4 +76,4 @@ else:
 xdata = np.unique(np.asarray([xt_grid[0][0]]))
 tdata = np.unique(np.asarray([xt_grid[0][1]]))
 
-training.writeDataToHDF5(xdata,tdata,p_eval_data,domain,physics,path_output_data)
+ref.writeDataToHDF5(xdata,tdata,p_eval_data,domain,physics,path_output_data)

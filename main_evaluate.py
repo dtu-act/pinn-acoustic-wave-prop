@@ -19,7 +19,7 @@ from utils.evaluate import evaluatePlotIR_TF, evaluatePlotAtReceiverPositions, e
 import setup.configurations as configs
 import setup.parsers as parsers
 from models.datastructures import BoundaryType
-import datahandlers.training_data_setup as training
+import datahandlers.reference_data_setup as ref
 
 ### SETTINGS ###
 id_dir = 'freq_dep_sine_3_256_7sources_d01'
@@ -42,7 +42,7 @@ validateData(settings)
 c_phys = settings.physics.c_phys
 
 # LOAD REFERENCE GRID
-xt_grid,_,_,_,_,_ = training.loadDataFromH5(settings.dirs.data_path, tmax=settings.domain.tmax)
+xt_grid,_,_,_,_,_ = ref.loadDataFromH5(settings.dirs.data_path, tmax=settings.domain.tmax)
 data = mdg.MultiDataContainerXT(xt_grid)
 r0 = utils.calcSourcePositions(data,settings.domain.x0_sources,settings.domain.xmin,settings.domain.xmax)
 

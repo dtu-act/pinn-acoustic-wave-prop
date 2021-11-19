@@ -9,7 +9,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import os
-import datahandlers.training_data_setup as training
+import datahandlers.reference_data_setup as ref
 import datahandlers.sciann_multidatagenerator as mdg
 from setup.settings import Settings
 import utils.plotting as plot
@@ -45,7 +45,7 @@ def evaluatePlotWaveSideBySide(m_pinn,funcs,settings,tag=''):
     figs_dir = settings.dirs.figs_dir
     show_plots = settings.show_plots
 
-    xt_grid,p_ref_data,_,x0_sources,_,_ = training.loadDataFromH5(data_path, tmax=tmax)
+    xt_grid,p_ref_data,_,x0_sources,_,_ = ref.loadDataFromH5(data_path, tmax=tmax)
 
     data = mdg.MultiDataContainerXT(xt_grid)
     x0_ref_data = np.asarray([[[x0],]*len(data[i][0][0]) for i,x0 in enumerate(x0_sources)])
@@ -126,7 +126,7 @@ def evaluatePlotAccumulators(m_pinn,funcs,accum,settings:Settings,tag='',do_anim
     show_plots=False
     do_animations=False
 
-    xt_grid,p_data,_,x0_sources,acc_ref_l_srcs,acc_ref_r_srcs = training.loadDataFromH5(data_path, tmax=tmax)
+    xt_grid,p_data,_,x0_sources,acc_ref_l_srcs,acc_ref_r_srcs = ref.loadDataFromH5(data_path, tmax=tmax)
 
     data = mdg.MultiDataContainerXT(xt_grid)
     x0_data = np.asarray([[[x0],]*len(data[i][0][0]) for i,x0 in enumerate(x0_sources)])
@@ -175,7 +175,7 @@ def evaluatePlotIR_TF(m,funcs,settings,r0_list,c_phys,figs_dir=None):
     if figs_dir==None:
         figs_dir = settings.dirs.figs_dir
 
-    xt_grid,p_ref_data,_,x0_sources,_,_ = training.loadDataFromH5(data_path, tmax=tmax)
+    xt_grid,p_ref_data,_,x0_sources,_,_ = ref.loadDataFromH5(data_path, tmax=tmax)
 
     data = mdg.MultiDataContainerXT(xt_grid)
     x0_data = np.asarray([[[x0],]*len(data[i][0][0]) for i,x0 in enumerate(x0_sources)])
@@ -216,7 +216,7 @@ def evaluatePlotAtReceiverPositions(m,funcs,settings,r0_list,figs_dir=None):
     if figs_dir==None:
         figs_dir = settings.dirs.figs_dir
 
-    xt_grid,p_ref_data,_,x0_sources,_,_ = training.loadDataFromH5(data_path, tmax=tmax)
+    xt_grid,p_ref_data,_,x0_sources,_,_ = ref.loadDataFromH5(data_path, tmax=tmax)
 
     data = mdg.MultiDataContainerXT(xt_grid)
     x0_data = np.asarray([[[x0],]*len(data[i][0][0]) for i,x0 in enumerate(x0_sources)])
@@ -266,7 +266,7 @@ def evaluateAnimateWave(m, funcs, settings, receiver_pos, c_phys, title=''):
     tmax = settings.domain.tmax
     figs_dir = settings.dirs.figs_dir
 
-    xt_grid,p_ref_data,_,x0_sources,_,_ = training.loadDataFromH5(data_path, tmax=tmax)
+    xt_grid,p_ref_data,_,x0_sources,_,_ = ref.loadDataFromH5(data_path, tmax=tmax)
 
     data = mdg.MultiDataContainerXT(xt_grid)
     x0_data = np.asarray([[[x0],]*len(data[i][0][0]) for i,x0 in enumerate(x0_sources)])

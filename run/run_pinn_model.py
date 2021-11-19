@@ -20,7 +20,6 @@ import utils.evaluate as ueval
 import models.sciann_models as models
 from models.datastructures import LossType, BoundaryType
 import datahandlers.meshing as meshing
-import datahandlers.training_data_setup as training
 from utils.validations import printGridStats, printSettings, validateData, plotGridSource
 
 def train(settings_path):
@@ -41,7 +40,7 @@ def train(settings_path):
     printSettings(settings_path)
     printGridStats(settings.domain)    
     
-    ### SETUP TRAINING DATA ###
+    ### SETUP INPUT MESH DATA ###
     data, x0_input_data, target_indxs = meshing.generateNonUniformMesh(settings.domain)
     
     plotGridSource(data, settings)
@@ -55,7 +54,7 @@ def train(settings_path):
     accs = models.setupNN_ODE(funcs, settings.network.ade_nn) if settings.domain.boundary_cond.type == BoundaryType.IMPEDANCE_FREQ_DEP else None
 
     if settings.do_transfer_learning:
-        m_pinn, targets_pinn = training.loadModel(settings, funcs, accs, data, target_indxs)
+        m_pinn, targets_pinn = models.loadModel(settings, funcs, accs, data, target_indxs)
 
         # NOT IMPLEMENTED IN THIS VERSION: transfer weights from initial simple (e.g. NEUMANN/DIRECHLET) model to full impedance model
         #m_pinn = models.setupPinnModels(settings, funcs, accs, plot_to_file=settings.dirs.plot_graph_path)

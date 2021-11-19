@@ -18,25 +18,6 @@ from models.datastructures import Accumulators, Domain, BoundaryType, SciannFunc
 import models.sciann_models as models
 from setup.settings import Settings
 
-def loadModel(settings: Settings, funcs: SciannFunctionals, accs: Accumulators, data: DataGeneratorXT, target_indxs: TargetIndexes):
-    tl = settings.transfer_learning
-
-    m_pinn = models.setupPinnModels(settings, funcs, accs, boundary_cond_override=tl.boundary_cond)
-    targets_pinn = models.setupPinnTargetsTrain(data, target_indxs, tl.boundary_cond)
-
-    checkpoint_path = os.path.join(settings.dirs.transfer_models_dir, tl.model_dir)
-    latest = tf.train.latest_checkpoint(checkpoint_path)
-    if latest == None:
-        raise FileNotFoundError(f'Weights not found: %s', checkpoint_path)
-    m_pinn.load_weights(latest)
-
-    m_pinn.model.trainable = tl.trainable
-        
-    m_pinn.compile()
-    m_pinn.summary()
-
-    return m_pinn, targets_pinn
-
 def loadAttrFromH5(path_data):
         """ Load attributes from simulation data
             https://www.pythonforthelab.com/blog/how-to-use-hdf5-files-in-python/

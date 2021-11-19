@@ -111,7 +111,7 @@ class InputOutputDirs:
         self.id_dir = os.path.join(base_dir, "results", self.id)
         self.figs_dir = os.path.join(self.id_dir, "figs")
         self.models_dir = os.path.join(self.id_dir, "models")
-        self.data_dir = os.path.join(base_dir, "training_data")
+        self.data_dir = os.path.join(base_dir, "reference_data")
         self.transfer_models_dir = os.path.join(base_dir, "trained_models")        
         self.data_path = os.path.join(self.data_dir, settings_dict['data_filename'])
 
