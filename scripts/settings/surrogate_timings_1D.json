@@ -9,9 +9,9 @@
 
     "__tmax__": "0.5*343 = 171.5 -> Half a second, normalized",
     "tmax": 171.5,
-    "xmin": -1,
-    "xmax": 1,
-    "source_pos": [0.0],
+    "Xmin": [-1],
+    "Xmax": [1],
+    "source_pos": [[0.0]],
     
     "sigma0": 0.2,
     "rho": 1.2,

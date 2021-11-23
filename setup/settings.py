@@ -41,7 +41,6 @@ class Settings:
     
         Xmin = settings_dict['Xmin']
         Xmax = settings_dict['Xmax']
-        tmin = 0
         tmax = settings_dict['tmax'] # input to NN should be normalized?
         ppw = settings_dict['ppw'] # points per wavelength
         x0_sources = settings_dict['source_pos']
