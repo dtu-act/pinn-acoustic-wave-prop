@@ -14,6 +14,8 @@ from pathlib import Path
 import shutil
 from typing import Callable, List
 
+import numpy as np
+
 SciannFunctionals = namedtuple('target_indexes',['x','t','x0','p','v'])
 Accumulators = namedtuple('accumulators',['phi','psi0','psi1'])
 
@@ -142,25 +144,31 @@ class Physics:
 class Domain:
     boundary_cond: BoundaryCondition
 
-    xmin: float
-    xmax: float
-    tmin: float
+    spatial_dimension: int
+    Xminmax: List[List[float]]
     tmax: float
     ppw: float
 
     dt: float
     dx: float
 
+    nX: List[List[int]]
+    nt: int
+
     source: SourceInfo
-    x0_sources: List[float]
+    x0_sources: List[List[float]]
 
     ic_points_p: float
     bc_points_p: float
 
-    def __init__(self, xmin, xmax, tmin, tmax, ppw, dt, dx, boundary_cond, source, x0_sources, ic_points_p, bc_points_p):
-        self.xmin = xmin
-        self.xmax = xmax
-        self.tmin = tmin
+    def __init__(self, Xminmax, tmax, ppw, dt, dx, boundary_cond, source, x0_sources, ic_points_p, bc_points_p):
+        assert(len(Xminmax[0]) == len(Xminmax[1]))
+        
+        if len(Xminmax) > 2:
+            raise NotImplementedError()
+
+        self.spatial_dimension = np.asarray(Xminmax).shape[1]
+        self.Xminmax = Xminmax
         self.tmax = tmax
         self.ppw = ppw
         self.dt = dt
@@ -170,21 +178,13 @@ class Domain:
         self.x0_sources = x0_sources
         self.ic_points_p = ic_points_p
         self.bc_points_p = bc_points_p
-        
-        self.nx = int((xmax-xmin)/dx) # number of spatial points
-        self.nt = int((tmax-tmin)/dt) # number of temporal steps
+                
+        self.nX = ((np.asarray(Xminmax[1])-np.asarray(Xminmax[0]))/dx).astype(int) # number of spatial points
+        self.nt = int(tmax/dt) # number of temporal steps
 
     @property
     def num_sources(self) -> int:
         return len(self.x0_sources)
-    
-    @property
-    def X(self) -> List[int]:
-        return [self.xmin,self.xmax]
-        
-    @property
-    def T(self):
-        return [self.tmin, self.tmax]
 
 @dataclass
 class ADENeuralNetwork:

@@ -47,7 +47,7 @@ def evaluatePlotWaveSideBySide(m_pinn,funcs,settings,tag=''):
 
     xt_grid,p_ref_data,_,x0_sources,_,_ = ref.loadDataFromH5(data_path, tmax=tmax)
 
-    data = mdg.MultiDataContainerXT(xt_grid)
+    data = mdg.MultiDataContainer(xt_grid)
     x0_ref_data = np.asarray([[[x0],]*len(data[i][0][0]) for i,x0 in enumerate(x0_sources)])
 
     # separate data
@@ -128,7 +128,7 @@ def evaluatePlotAccumulators(m_pinn,funcs,accum,settings:Settings,tag='',do_anim
 
     xt_grid,p_data,_,x0_sources,acc_ref_l_srcs,acc_ref_r_srcs = ref.loadDataFromH5(data_path, tmax=tmax)
 
-    data = mdg.MultiDataContainerXT(xt_grid)
+    data = mdg.MultiDataContainer(xt_grid)
     x0_data = np.asarray([[[x0],]*len(data[i][0][0]) for i,x0 in enumerate(x0_sources)])
 
     # separate data
@@ -177,7 +177,7 @@ def evaluatePlotIR_TF(m,funcs,settings,r0_list,c_phys,figs_dir=None):
 
     xt_grid,p_ref_data,_,x0_sources,_,_ = ref.loadDataFromH5(data_path, tmax=tmax)
 
-    data = mdg.MultiDataContainerXT(xt_grid)
+    data = mdg.MultiDataContainer(xt_grid)
     x0_data = np.asarray([[[x0],]*len(data[i][0][0]) for i,x0 in enumerate(x0_sources)])
 
     # separate data
@@ -218,7 +218,7 @@ def evaluatePlotAtReceiverPositions(m,funcs,settings,r0_list,figs_dir=None):
 
     xt_grid,p_ref_data,_,x0_sources,_,_ = ref.loadDataFromH5(data_path, tmax=tmax)
 
-    data = mdg.MultiDataContainerXT(xt_grid)
+    data = mdg.MultiDataContainer(xt_grid)
     x0_data = np.asarray([[[x0],]*len(data[i][0][0]) for i,x0 in enumerate(x0_sources)])
 
     # separate data
@@ -268,7 +268,7 @@ def evaluateAnimateWave(m, funcs, settings, receiver_pos, c_phys, title=''):
 
     xt_grid,p_ref_data,_,x0_sources,_,_ = ref.loadDataFromH5(data_path, tmax=tmax)
 
-    data = mdg.MultiDataContainerXT(xt_grid)
+    data = mdg.MultiDataContainer(xt_grid)
     x0_data = np.asarray([[[x0],]*len(data[i][0][0]) for i,x0 in enumerate(x0_sources)])
 
     # separate data

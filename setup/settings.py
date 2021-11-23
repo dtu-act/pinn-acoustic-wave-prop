@@ -39,8 +39,8 @@ class Settings:
 
         boundary_cond = parsers.setupBoundaryCondition(settings_dict)
     
-        xmin = settings_dict['xmin']
-        xmax = settings_dict['xmax']
+        Xmin = settings_dict['Xmin']
+        Xmax = settings_dict['Xmax']
         tmin = 0
         tmax = settings_dict['tmax'] # input to NN should be normalized?
         ppw = settings_dict['ppw'] # points per wavelength
@@ -49,7 +49,7 @@ class Settings:
         c_phys = settings_dict['c_phys']
         fmax = settings_dict['fmax']
         sigma0 = settings_dict['sigma0']
-        rho = settings_dict['rho']
+        rho = settings_dict['rho']        
 
         self.physics = Physics(sigma0,fmax,c,c_phys,rho)
 
@@ -63,7 +63,7 @@ class Settings:
         dx = lambda_w/ppw
         dt = dx/c # CFL condition (FDTD)
 
-        self.domain = Domain(xmin, xmax, tmin, tmax, ppw, dt, dx, boundary_cond, source, x0_sources, ic_points_p, bc_points_p)
+        self.domain = Domain([Xmin, Xmax], tmax, ppw, dt, dx, boundary_cond, source, x0_sources, ic_points_p, bc_points_p)
         
         activation = settings_dict['activation']
         num_layers = settings_dict['num_layers']

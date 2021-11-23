@@ -4,8 +4,8 @@
 
     "c": 1,
     "c_phys": 343,
-    "___COMMENT_fmax___": "2000Hz*c/343 = 5.8309 for c=1",
-    "fmax": 5.8309,
+    "___COMMENT_fmax___": "1000Hz*c/343 = 2.9155 for c=1",
+    "fmax": 2.9155,
 
     "__tmax__": "0.5*343 = 171.5 -> Half a second, normalized",
     "tmax": 171.5,
@@ -15,7 +15,7 @@
     
     "sigma0": 0.2,
     "rho": 1.2,
-    "ppw": 2,
+    "ppw": 4,
     
     "epochs": 50000,
     "stop_loss_value": 0.0002,
@@ -23,7 +23,7 @@
     "do_transfer_learning": false,
 
     "boundary_type": "IMPEDANCE_FREQ_DEP",
-    "data_filename": "freq_dep_1D_2000.00Hz_sigma0.2_c1_d0.10_srcs7.hdf5",
+    "data_filename": "freq_dep_1D_1000.00Hz_sigma0.2_c1_d0.10_srcs7.hdf5",
     
     "batch_size": 512,
     "learning_rate": 0.0001,

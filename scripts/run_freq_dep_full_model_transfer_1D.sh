@@ -1,5 +1,5 @@
 #!/bin/sh
-#BSUB -J freq_dep_full
+#BSUB -J freq_dep_fine
 #BSUB -q gpuv100
 #BSUB -n 1
 #BSUB -gpu "num=1:mode=exclusive_process"
@@ -25,4 +25,4 @@ module load tensorrt/7.2.3.4-cuda-11.1
 export PYTHONPATH="${PYTHONPATH}:/zhome/00/4/50173/.local/bin"
 export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:$CUDA_ROOT/extras/CUPTI/lib64/"
 
-python3 main_train.py --path_settings="scripts/settings/freq_dep_full_model.json"
+python3 main_train.py --path_settings="scripts/settings/freq_dep_full_model_transfer_1D.json"

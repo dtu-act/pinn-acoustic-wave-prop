@@ -22,7 +22,7 @@ res = 160
 colormap = cm.magma_r #'Greys' #cm.cividis
 figsize_x, figsize_y = 8, 4
 
-def plotReference(ref_data_path,tmax,plotnth=1,figs_dir=None):
+def plotReference(ref_data_path,tmax=None,plotnth=1,figs_dir=None,block_plot=False):
     def subPlot(x_train, t_train, p_train, x0, fig, ax, plotnth=1):    
         p1 = ax.tricontourf(
             x_train[::plotnth], t_train[::plotnth], p_train[::plotnth], res, cmap=colormap)
@@ -33,7 +33,7 @@ def plotReference(ref_data_path,tmax,plotnth=1,figs_dir=None):
         fig.colorbar(p1, cax=cax, orientation='vertical')
 
     xt_grid,p_data,_,x0_sources,_,_ = ref.loadDataFromH5(ref_data_path, tmax=tmax)
-    data = mdg.MultiDataContainerXT(xt_grid)
+    data = mdg.MultiDataContainer(xt_grid)
 
     fig, _ = plt.subplots(int(np.ceil(len(x0_sources)/2)),
                           min(len(x0_sources), 2), figsize=(12, 12))
@@ -59,8 +59,10 @@ def plotReference(ref_data_path,tmax,plotnth=1,figs_dir=None):
     if figs_dir != None:
         path_plot = os.path.join(figs_dir, 'p_exact_sources.png')
         fig.savefig(path_plot)
+    
+    plt.show(block=block_plot)
 
-def plotSideBySide(x_mesh, t_mesh, p_pred, p_exact, figs_dir=None, plotnth=1, tag='', err=''):
+def plotSideBySide(x_mesh, t_mesh, p_pred, p_exact, figs_dir=None, plotnth=1, tag='', err='', block_plot=False):
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 4))
     fig.suptitle('%s, err = %e' % (tag, err))
 
@@ -86,9 +88,9 @@ def plotSideBySide(x_mesh, t_mesh, p_pred, p_exact, figs_dir=None, plotnth=1, ta
         path_plot = os.path.join(figs_dir, f'{tag}.png')
         plt.savefig(path_plot)
 
-    plt.show(block=False)
+    plt.show(block=block_plot)
 
-def plotData(x_mesh, t_mesh, p, vline=None, path_file=None, path_cbar_file=None, v_minmax=[]):
+def plotData(x_mesh, t_mesh, p, vline=None, path_file=None, path_cbar_file=None, v_minmax=[], block_plot=False):
     fig = plt.figure(figsize=(figsize_x, figsize_y))
     if v_minmax:
         cax = plt.tricontourf(x_mesh, t_mesh, p, res, cmap=colormap, vmin=v_minmax[0], vmax=v_minmax[1])
@@ -133,9 +135,9 @@ def plotData(x_mesh, t_mesh, p, vline=None, path_file=None, path_cbar_file=None,
         ax.remove()
         plt.savefig(path_cbar_file,bbox_inches='tight',pad_inches=0, dpi=800)
 
-    plt.show(block=False)
+    plt.show(block=block_plot)
 
-def plotAccumulators(t, acc_pred_l, acc_pred_r, acc_ref_l, acc_ref_r, x0, labels_acc, figs_dir=None, tag=''):
+def plotAccumulators(t, acc_pred_l, acc_pred_r, acc_ref_l, acc_ref_r, x0, labels_acc, figs_dir=None, tag='', block_plot=False):
     fig, _ = plt.subplots(4, 2, figsize=(15, 10))
     fig.suptitle(f'Accumulators for $x_0={x0}$', fontsize=20)
 
@@ -167,8 +169,10 @@ def plotAccumulators(t, acc_pred_l, acc_pred_r, acc_ref_l, acc_ref_r, x0, labels
     if figs_dir != None:
         path_plot = os.path.join(figs_dir, f'accumulators_{tag}.png')
         fig.savefig(path_plot)
+    
+    plt.show(block=block_plot)
 
-def plotTransferFunction(p_pred_data, p_ref_data, tmax, freq_min_max=[0,np.inf], show_legends=True, path_file=None):
+def plotTransferFunction(p_pred_data, p_ref_data, tmax, freq_min_max=[0,np.inf], show_legends=True, path_file=None, block_plot=False):
         N = len(p_pred_data)
         dt = tmax/N
         fs = 1/dt
@@ -205,9 +209,9 @@ def plotTransferFunction(p_pred_data, p_ref_data, tmax, freq_min_max=[0,np.inf],
         if path_file != None:
             plt.savefig(path_file,bbox_inches='tight',pad_inches=0)
 
-        plt.show(block=False)
+        plt.show(block=block_plot)
 
-def plotTimeDomain(p_pred_data, p_ref_data, t_pred_data, t_ref_data, show_legends=True, path_file=None):                
+def plotTimeDomain(p_pred_data, p_ref_data, t_pred_data, t_ref_data, show_legends=True, path_file=None, block_plot=False):                
         fig = plt.figure(figsize=(figsize_x, figsize_y))
         plt.plot(t_pred_data, p_pred_data, linestyle='--', linewidth=4, color='red')
         plt.plot(t_ref_data, p_ref_data, linestyle='-', linewidth=4, color='blue')
@@ -224,9 +228,9 @@ def plotTimeDomain(p_pred_data, p_ref_data, t_pred_data, t_ref_data, show_legend
         if path_file != None:
             plt.savefig(path_file,bbox_inches='tight',pad_inches=0)
 
-        plt.show(block=False)
+        plt.show(block=block_plot)
 
-def plotScatter(x_data, t_data):
+def plotScatter(x_data, t_data, block_plot=False):
     fig = plt.figure(figsize=(figsize_x, figsize_y))
     plt.scatter(x_data, t_data, label='All data')
     plt.xlabel('x [m]')
@@ -234,9 +238,9 @@ def plotScatter(x_data, t_data):
     plt.legend(title="Reference Data", bbox_to_anchor=(
         1.05, 1), loc='upper left')
     fig.tight_layout()    
-    plt.show(block=False)
+    plt.show(block=block_plot)
 
-def plotConvergence(h, figs_dir=None, tag=''):    
+def plotConvergence(h, figs_dir=None, tag='', block_plot=False):    
     plt.figure(figsize=(10, 8))
     plt.semilogy(h.history['loss'])
     plt.title(f'Convergence {tag}')
@@ -248,4 +252,4 @@ def plotConvergence(h, figs_dir=None, tag=''):
         path_hist_plot = os.path.join(figs_dir, f'loss_convergence_{tag}.png')
         plt.savefig(path_hist_plot)
 
-    plt.show(block=False)
+    plt.show(block=block_plot)

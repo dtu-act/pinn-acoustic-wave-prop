@@ -19,8 +19,8 @@
 #           Generate 2D time-dependent collocation grid  for a rectangular domain. 
 # ==============================================================================
 
-import numpy as np
-import matplotlib.pyplot as plt 
+import numpy as np 
+import matplotlib.pyplot as plt
 from smt.sampling_methods import LHS
 from itertools import cycle
 cycol = cycle('bgrcmk')
@@ -269,6 +269,7 @@ class DataGeneratorXY:
       fig.tight_layout()
       plt.show()
 
+
 class DataGeneratorXT:
   """ Generates 1D time-dependent collocation grid for training PINNs
   # Arguments:
@@ -280,7 +281,6 @@ class DataGeneratorXT:
     num_sample_t: total number of collocation points in t dimension.
     bc_points_p: fraction of total number of points to use at the boundaries.
     ic_points_p: fraction of total number of points to use at t=0 (initial condition).
-    num_domains: number of domains. E.g., equal to the number of sources to train.
     hypercube: if True, use Latin Hypercube sampling.
     logT: generate random samples logarithmic in time. 
 
@@ -293,8 +293,7 @@ class DataGeneratorXT:
                X=[0., 1.],
                T=[0., 1.],
                targets=['domain', 'ic', 'bc-left', 'bc-right'], 
-               num_sample_x=100,
-               num_sample_t=100,
+               num_sample=10000,
                bc_points_p=0.25,
                ic_points_p=0.25,
                hypercube=False,
@@ -306,17 +305,17 @@ class DataGeneratorXT:
     self.ic_points_p = ic_points_p
     self.logT = logT
     self.targets = targets
-    self.num_sample = -1
+    self.num_sample = num_sample
     self.input_data = None
     self.target_data = None
     self.use_latin_hypercube = hypercube
-    self.set_data(int(num_sample_x),int(num_sample_t))
+    self.set_data()
 
   def __len__(self):
     return self.input_data[0].shape[0]
 
-  def set_data(self, num_sample_x, num_sample_t):
-    self.input_data, self.target_data = self.generate_data(num_sample_x, num_sample_t)
+  def set_data(self):
+    self.input_data, self.target_data = self.generate_data()
 
   def get_data(self):
     return self.input_data, self.target_data
@@ -329,14 +328,13 @@ class DataGeneratorXT:
       t_dom = np.random.uniform(self.Tdomain[0], self.Tdomain[1], num_sample)
     return t_dom
 
-  def generate_data(self, num_sample_x, num_sample_t):
-    num_sample = int(num_sample_x*num_sample_t)
+  def generate_data(self):
     counter = 0
     
     # Samples inside the domain.
     p_dom = 1 - self.bc_points_p - self.ic_points_p
-
-    num_sample_domain = int(num_sample*p_dom)
+    num_sample_domain = int(self.num_sample*p_dom)
+    
     if self.use_latin_hypercube:
       # https://smt.readthedocs.io/en/latest/_src_docs/sampling_methods/lhs.html?highlight=latin%20hypercube
       xlimits = np.array([[self.Xdomain[0], self.Xdomain[1]], [self.Tdomain[0], self.Tdomain[1]]])
@@ -352,7 +350,7 @@ class DataGeneratorXT:
     counter += ids_dom.size
 
     # Samples for IC.
-    num_sample_ic = int(num_sample*self.ic_points_p)
+    num_sample_ic = int(self.num_sample*self.ic_points_p)
 
     # initial conditions
     x_ic = np.random.uniform(self.Xdomain[0], self.Xdomain[1], num_sample_ic)
@@ -361,7 +359,7 @@ class DataGeneratorXT:
     counter += ids_ic.size
 
     # Samples for BC.
-    num_sample_bc = int(num_sample*self.bc_points_p)
+    num_sample_bc = int(self.num_sample*self.bc_points_p)
 
     # bc points
     num_sample_per_edge = int(num_sample_bc/2)
@@ -420,7 +418,7 @@ class DataGeneratorXT:
       ids = np.random.choice(len(self), batch_size, replace=False)
       x_data = self.input_data[0][ids,:]
       t_data = self.input_data[1][ids,:]
-      plt.scatter(x_data, t_data)
+      fig = plt.scatter(x_data, t_data)
       plt.xlabel('x')
       plt.ylabel('t')
       plt.title('Sample batch = {}'.format(batch_size))
@@ -465,6 +463,8 @@ class DataGeneratorXYT:
                X=[0., 1.],
                Y=[0., 1.],
                T=[0., 1.],
+               bc_points_p=0.25,
+               ic_points_p=0.25,
                targets=['domain', 'ic', 'bc-left', 'bc-right', 'bc-bot', 'bc-top'], 
                num_sample=10000,
                logT=False):
@@ -472,6 +472,8 @@ class DataGeneratorXYT:
     self.Xdomain = X
     self.Ydomain = Y
     self.Tdomain = T
+    self.bc_points_p = bc_points_p
+    self.ic_points_p = ic_points_p
     self.logT = logT
     self.targets = targets
     self.num_sample = num_sample
@@ -497,29 +499,33 @@ class DataGeneratorXYT:
     return t_dom
 
   def generate_data(self):
-    # Half of the samples inside the domain.
-    num_sample = int(self.num_sample/2)
+    # Samples inside the domain.
+    p_dom = 1 - self.bc_points_p - self.ic_points_p
+    num_sample_domain = int(self.num_sample*p_dom)
     
     counter = 0
     # domain points 
-    x_dom = np.random.uniform(self.Xdomain[0], self.Xdomain[1], num_sample)
-    y_dom = np.random.uniform(self.Ydomain[0], self.Ydomain[1], num_sample)
-    t_dom = self.generate_uniform_T_samples(num_sample)
+    x_dom = np.random.uniform(self.Xdomain[0], self.Xdomain[1], num_sample_domain)
+    y_dom = np.random.uniform(self.Ydomain[0], self.Ydomain[1], num_sample_domain)
+    t_dom = self.generate_uniform_T_samples(num_sample_domain)
     ids_dom = np.arange(x_dom.shape[0])
     counter += ids_dom.size
 
-    # The other half distributed equally between BC and IC.
-    num_sample = int(self.num_sample/4)
+    # Samples for IC.
+    num_sample_ic = int(self.num_sample*self.ic_points_p)
 
     # initial conditions
-    x_ic = np.random.uniform(self.Xdomain[0], self.Xdomain[1], num_sample)
-    y_ic = np.random.uniform(self.Ydomain[0], self.Ydomain[1], num_sample)
-    t_ic = np.full(num_sample, self.Tdomain[0])
-    ids_ic = np.arange(x_ic.shape[0]) + counter
+    x_ic = np.random.uniform(self.Xdomain[0], self.Xdomain[1], num_sample_ic)
+    y_ic = np.random.uniform(self.Ydomain[0], self.Ydomain[1], num_sample_ic)
+    t_ic = np.full(num_sample_ic, self.Tdomain[0])
+    ids_ic = np.arange(x_ic.shape[0]) + counter 
     counter += ids_ic.size
 
-    # bc points 
-    num_sample_per_edge = int(num_sample/4)
+    # Samples for BC.
+    num_sample_bc = int(self.num_sample*self.bc_points_p)
+    # bc points
+    num_sample_per_edge = int(num_sample_bc/4)
+
     # left bc points 
     x_bc_left = np.full(num_sample_per_edge, self.Xdomain[0])
     y_bc_left = np.random.uniform(self.Ydomain[0], self.Ydomain[1], num_sample_per_edge)
@@ -542,9 +548,9 @@ class DataGeneratorXYT:
     counter += ids_bc_bot.size
 
     # right bc points 
-    x_bc_top = np.random.uniform(self.Xdomain[0], self.Xdomain[1], num_sample-num_sample_per_edge)
-    y_bc_top = np.full(num_sample-num_sample_per_edge, self.Ydomain[1])
-    t_bc_top = self.generate_uniform_T_samples(num_sample-num_sample_per_edge)
+    x_bc_top = np.random.uniform(self.Xdomain[0], self.Xdomain[1], num_sample_bc-num_sample_per_edge)
+    y_bc_top = np.full(num_sample_bc-num_sample_per_edge, self.Ydomain[1])
+    t_bc_top = self.generate_uniform_T_samples(num_sample_bc-num_sample_per_edge)
     ids_bc_top = np.arange(x_bc_top.shape[0]) + counter
     counter += ids_bc_top.size
 

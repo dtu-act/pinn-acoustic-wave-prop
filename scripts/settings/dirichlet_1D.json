@@ -4,22 +4,22 @@
     
     "c": 1,
     "c_phys": 343,
-    "___COMMENT_fmax___": "2000Hz*c/343 = 5.8309 for c=1, =23.3236 for c=4",
-    "fmax": 5.8309,
+    "___COMMENT_fmax___": "1000Hz*c/343 = 2.9155 for c=1",
+    "fmax": 2.9155,
 
     "tmax": 4,
-    "xmin": -1,
-    "xmax": 1,
-    "source_pos": [-0.3,-0.2,-0.1,0.0,0.1,0.2,0.3],
+    "xmin": [-1],
+    "xmax": [1],
+    "source_pos": [[-0.3],[-0.2],[-0.1],[0.0],[0.1],[0.2],[0.3]],
     
     "sigma0": 0.2,
     "rho": 1.2,
-    "ppw": 5,
+    "ppw": 10,
 
     "epochs": 5000,
 
     "boundary_type": "DIRICHLET",
-    "data_filename": "dirichlet_1D_2000.00Hz_sigma0.2_c1.hdf5",
+    "data_filename": "dirichlet_1D_1000.00Hz_sigma0.2_c1.hdf5",
     
     "batch_size": 512,
     "learning_rate": 0.0002,

@@ -1,11 +1,11 @@
 #!/bin/sh
-#BSUB -J neumann
+#BSUB -J freq_indep
 #BSUB -q gpuv100
 #BSUB -n 1
 #BSUB -gpu "num=1:mode=exclusive_process"
 #BSUB -R "span[hosts=1]"
 #BSUB -W 24:00
-#BSUB -R "rusage[mem=4GB]"
+#BSUB -R "rusage[mem=3GB]"
 
 #BSUB -o ../data/pinn/logs/Output_%J.txt
 #BSUB -e ../data/pinn/logs/Error_%J.txt
@@ -25,4 +25,4 @@ module load tensorrt/7.2.3.4-cuda-11.1
 export PYTHONPATH="${PYTHONPATH}:/zhome/00/4/50173/.local/bin"
 export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:$CUDA_ROOT/extras/CUPTI/lib64/"
 
-python3 main_train.py --path_settings="scripts/settings/neumann.json"
+python3 main_train.py --path_settings="scripts/settings/freq_indep_1D.json"

@@ -26,7 +26,7 @@ id_dir = 'freq_dep_sine_3_256_7sources_d01'
 settings_filename = 'settings_srcs.json'
 base_dir = "/Users/nikolasborrel/data/pinn"
 
-do_plots_for_paper = True
+do_plots_for_paper = False
 do_animations = True
 do_side_by_side_plot = True
 
@@ -43,8 +43,8 @@ c_phys = settings.physics.c_phys
 
 # LOAD REFERENCE GRID
 xt_grid,_,_,_,_,_ = ref.loadDataFromH5(settings.dirs.data_path, tmax=settings.domain.tmax)
-data = mdg.MultiDataContainerXT(xt_grid)
-r0 = utils.calcSourcePositions(data,settings.domain.x0_sources,settings.domain.xmin,settings.domain.xmax)
+data = mdg.MultiDataContainer(xt_grid)
+r0 = utils.calcSourcePositions(data,settings.domain.x0_sources)
 
 checkpoint_path = os.path.join(settings.dirs.models_dir, 'LossType.PINN')
 latest = tf.train.latest_checkpoint(checkpoint_path)

@@ -11,18 +11,18 @@
             "program": "main_train.py",
             "args": [
                 "--path_settings",
-                "scripts/settings/local_train.json",
+                "scripts/settings/local_train_1D.json",
             ],
             "console": "integratedTerminal"
         },
         {
-            "name": "Python: TIMING",
+            "name": "Python: TIMINGS",
             "type": "python",
             "request": "launch",
             "program": "main_evaluate_timings.py",
             "args": [
                 "--path_settings",
-                "scripts/settings/local_timings.json",
+                "scripts/settings/local_timings_1D.json",
                 "--trained_model_tag",
                 "FREQ-DEP-sigma02_srcs7-FINAL"
             ],

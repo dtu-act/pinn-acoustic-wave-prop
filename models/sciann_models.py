@@ -6,18 +6,18 @@
 #
 # Licensed under the MIT License.
 # ==============================================================================
+from typing import NamedTuple
 import sciann as sn
 import os
 import tensorflow as tf
 from pathlib import Path
-from datahandlers.meshing import TargetIndexes
 from datahandlers.sciann_datagenerator import DataGeneratorXT
 
 from models.datastructures import ADENeuralNetwork, BoundaryCondition, BoundaryType, LossType, PressureNeuralNetwork, SourceType, SciannFunctionals, Accumulators
 from models.kernel_initializers import SineInitializer, first_layer_sine_init
 from setup.settings import Settings
 
-def loadModel(settings: Settings, funcs: SciannFunctionals, accs: Accumulators, data: DataGeneratorXT, target_indxs: TargetIndexes):
+def loadModel(settings: Settings, funcs: SciannFunctionals, accs: Accumulators, data: DataGeneratorXT, target_indxs: NamedTuple):
     tl = settings.transfer_learning
 
     m_pinn = setupPinnModels(settings, funcs, accs, boundary_cond_override=tl.boundary_cond)
@@ -119,7 +119,7 @@ def setupDataModel(settings: Settings):
 
     return m,functionals
 
-def setupPinnTargetsTrain(data: DataGeneratorXT, target_indxs: TargetIndexes, boundary_cond: BoundaryCondition):
+def setupPinnTargetsTrain(data: DataGeneratorXT, target_indxs: NamedTuple, boundary_cond: BoundaryCondition):
     """ Returning the target_data for use in the training for PINN (no data).
         The order is [DOMAIN, BC_LEFT, BC_RIGHT, IC_t, IC]
 
@@ -132,7 +132,6 @@ def setupPinnTargetsTrain(data: DataGeneratorXT, target_indxs: TargetIndexes, bo
     BC_LEFT_ENUM = target_indxs.bc_left
     BC_RIGHT_ENUM = target_indxs.bc_right
     BCs = target_indxs.bc
-    #ALL = target_indxs.all
     tdata = data.targets_data # ["domain", "ic", "bc-left", "bc-right", "bc", "point-source", "all"]
 
     if boundary_cond.type == BoundaryType.IMPEDANCE_FREQ_DEP:

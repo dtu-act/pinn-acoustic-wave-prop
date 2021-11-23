@@ -8,15 +8,9 @@
 # ==============================================================================
 import numpy as np
 import os
-import tensorflow as tf
 import h5py
 from pathlib import Path
-from datahandlers.meshing import TargetIndexes
-from datahandlers.sciann_datagenerator import DataGeneratorXT
-
-from models.datastructures import Accumulators, Domain, BoundaryType, SciannFunctionals, Physics
-import models.sciann_models as models
-from setup.settings import Settings
+from models.datastructures import Domain, BoundaryType, Physics
 
 def loadAttrFromH5(path_data):
         """ Load attributes from simulation data
@@ -31,7 +25,7 @@ def loadAttrFromH5(path_data):
             sigma0 = f.attrs['sigma0'][0]
             fmax = f.attrs['fmax'][0]
 
-            x0_sources = f['x0_sources'][()].flatten()
+            x0_sources = f['x0_sources'][()]
             tmax = f['t'][-1]
 
             physics_settings = Physics(sigma0,fmax,c,343,rho)
@@ -115,8 +109,7 @@ def writeDataToHDF5(x, t, p_sources, domain: Domain, physics: Physics, path_file
         f.create_dataset('x', data=x)
         f.create_dataset('t', data=t)
 
-        for i in range(0,len(p_sources)):
-            
+        for i in range(0,len(p_sources)):            
             data_p = p_sources[i].reshape(len(t),len(x))
             f.create_dataset(f'p{i}', data=data_p)
         
@@ -130,14 +123,17 @@ def writeDataToHDF5(x, t, p_sources, domain: Domain, physics: Physics, path_file
         
         print(list(f.keys()))
         print(list(f.attrs))
-    
-def WE1D(x_mesh, t_mesh, x0, boundary_cond, c, sigma0, num_reflections=4):
+
+def WaveEquation1D(grid, x0, boundary_cond, c, sigma0, num_reflections=4):
     """ Analytical solution with Dirichlet or Neumann boundaries
-        Model dirichlet/neuman conditions with arbitrarily many reflections
+        num_reflections: number of reflections in the solution
     """
     assert(boundary_cond == BoundaryType.DIRICHLET or boundary_cond == BoundaryType.NEUMANN)
 
     amp_sign = 1
+
+    x_mesh = grid[0]
+    t_mesh = grid[1]
 
     xmin = np.min(x_mesh)
     xmax = np.max(x_mesh)
@@ -156,11 +152,11 @@ def WE1D(x_mesh, t_mesh, x0, boundary_cond, c, sigma0, num_reflections=4):
 
     for i in range(num_reflections):
         if np.mod(i,2) == 0:
-            x0_min = xmin - (i)*(L) - L*x0_rel     # x0 for positive travelling wave
-            x0_max = xmax + (i+1)*(L) - L*x0_rel   # x0 for negative travelling wave
+            x0_min = xmin - i*L - L*x0_rel       # x0 for positive travelling wave
+            x0_max = xmax + (i+1)*L - L*x0_rel   # x0 for negative travelling wave
         else:
-            x0_min = xmin - (i)*(L) - (L - L*x0_rel)  # x0 for positive travelling wave
-            x0_max = xmax + (i)*(L) + L*x0_rel        # x0 for negative travelling wave
+            x0_min = xmin - i*L - (L - L*x0_rel)  # x0 for positive travelling wave
+            x0_max = xmax + i*L + L*x0_rel        # x0 for negative travelling wave
 
         if boundary_cond == BoundaryType.DIRICHLET:
             amp_sign = -1*amp_sign
@@ -172,16 +168,79 @@ def WE1D(x_mesh, t_mesh, x0, boundary_cond, c, sigma0, num_reflections=4):
             
     return p
 
-def generateSolutionData1D(xt_grids, x0_sources, c, sigma0, boundary_cond):
+def WaveEquation2D(grid, X0, boundary_cond, c, sigma0, num_reflections=4):
+    """ Analytical solution with Dirichlet or Neumann boundaries
+        num_reflections: number of reflections in the solution
+    """
+    assert(boundary_cond == BoundaryType.DIRICHLET or boundary_cond == BoundaryType.NEUMANN)
+
+    amp_sign = 1
+
+    x_mesh = grid[0]
+    y_mesh = grid[1]
+    t_mesh = grid[2]
+
+    xmin = np.min(x_mesh)
+    xmax = np.max(x_mesh)
+    ymin = np.min(y_mesh)
+    ymax = np.max(y_mesh)
+    
+    x0 = X0[0]
+    y0 = X0[1]
+
+    Lx = ( xmax - xmin )
+    Ly = ( ymax - ymin )
+
+    # initial wave solution (no reflections)
+    p = 0.5*np.exp(-0.5*((x_mesh-x0 - c*t_mesh)/sigma0)**2) + \
+        0.5*np.exp(-0.5*((x_mesh-x0 + c*t_mesh)/sigma0)**2)
+
+    if num_reflections <= 0:
+        return p
+
+    # calculate starting positions for reflected waves
+    x0_rel = (x0 - xmin) / Lx # relative position
+    y0_rel = (y0 - ymin) / Ly # relative position
+
+    for i in range(num_reflections):
+        if np.mod(i,2) == 0:
+            # x0 for positive travelling wave
+            x0_min = xmin - i*Lx - Lx*x0_rel      
+            y0_min = ymin - i*Ly - Ly*y0_rel
+
+            # x0 for negative travelling wave
+            x0_max = xmax + (i+1)*Lx - Lx*x0_rel
+            y0_max = ymax + (i+1)*Ly - Ly*y0_rel
+        else:
+            # x0 for positive travelling wave
+            x0_min = xmin - i*Lx - (Lx - Lx*x0_rel)
+            y0_min = ymin - i*Ly - (Ly - Ly*y0_rel)
+
+            # x0 for negative travelling wave
+            x0_max = xmax + i*Lx + Lx*x0_rel
+            y0_max = ymax + i*Ly + Ly*y0_rel
+
+        if boundary_cond == BoundaryType.DIRICHLET:
+            amp_sign = -1*amp_sign
+
+        p_pos = amp_sign*0.5*np.exp(-0.5*((x_mesh-x0_min - c*t_mesh)/sigma0)**2)
+        p_neg = amp_sign*0.5*np.exp(-0.5*((x_mesh-x0_max + c*t_mesh)/sigma0)**2)
+        p = p + p_pos + p_neg
+
+    return p
+
+def generateSolutionData1D(grids, x0_sources, c, sigma0, boundary_cond):
     p_data = []    
 
+    spatial_dim = np.asarray(x0_sources).shape[1]
     for i, x0 in enumerate(x0_sources):
-        input_data = xt_grids[i]
+        if spatial_dim == 1:
+            p_sol = WaveEquation1D(grids[i],x0,boundary_cond,c,sigma0)
+        elif spatial_dim == 2:
+            p_sol = WaveEquation2D(grids[i],x0,boundary_cond,c,sigma0)
+        else:
+            raise NotImplementedError()
 
-        x_data_i = input_data[0].flatten()
-        t_data_i = input_data[1].flatten()
-
-        p_sol = WE1D(x_data_i,t_data_i,x0,boundary_cond,c,sigma0)        
-        p_data.append(np.asarray(p_sol).reshape(-1,1))
+        p_data.append(np.asarray(p_sol)) # NBJ reshape removed
 
     return np.asarray(p_data)

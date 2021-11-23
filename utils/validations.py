@@ -53,12 +53,19 @@ def printGridStats(domain: Domain):
     print('')
     print('------------')
     print('PINN GRID stats')
+    print(f'spatial dim: {domain.spatial_dimension}')
     print(f'Number of sources: {domain.num_sources}')
     print('dx = %0.4f' % domain.dx)
     print('dt = %0.4f' % domain.dt)
-    print(f'nx_tot = {domain.nx}')
+    print(f'nX = {domain.nX}')
     print(f'nt_tot = {domain.nt}')
-    print(f'tot = {domain.nx*domain.nt}')
+    if domain.spatial_dimension == 1:
+        tot_points = domain.nX[0]*domain.nt
+    elif domain.spatial_dimension == 2:
+        tot_points = domain.nX[0]*domain.nX[1]*domain.nt
+    else:
+        tot_points = domain.nX[0]*domain.nX[1]*domain.nX[2]*domain.nt
+    print(f'total points = {tot_points}')
     print('------------')
     print('')
 
@@ -69,13 +76,7 @@ def printSettings(path_to_settings):
     f.close()
 
 def validateData(settings: Settings):
-    ref_data_path = settings.dirs.data_path
-    
-    xmin = settings.domain.xmin
-    xmax = settings.domain.xmax
-    tmin = settings.domain.tmin
-    tmax = settings.domain.tmax
-    
+    ref_data_path = settings.dirs.data_path    
     x0_sources = settings.domain.x0_sources
 
     c = settings.physics.c
@@ -83,10 +84,11 @@ def validateData(settings: Settings):
     rho = settings.physics.rho
     sigma0 = settings.physics.sigma0
 
-    dt_load,dx_load,x0_sources_load,physics_load,tmax_load = ref.loadAttrFromH5(ref_data_path)
+    _,_,x0_sources_load,physics_load,_ = ref.loadAttrFromH5(ref_data_path)
 
     assert physics_load.c == c, f'Settings and loaded data differs: c={c} !=  c_loaded={physics_load.c}'
     assert abs(physics_load.fmax - fmax) < 0.001, f'Settings and loaded data differs: fmax={fmax} !=  fmax_loaded={physics_load.fmax}'
     assert abs(physics_load.sigma0 - sigma0) < 0.001, f'Settings and loaded data differs: sigma0={sigma0} !=  sigma0_loaded={physics_load.sigma0}'
     assert abs(physics_load.rho - rho) < 0.001, f'Settings and loaded data differs: rho={rho} !=  rho_loaded={physics_load.rho}'
-    assert len(x0_sources_load) == len(x0_sources) and (x0_sources_load == x0_sources).all(), f'Settings and loaded data differs: x0={x0_sources} !=  x0_loaded={x0_sources_load}'
+
+    assert len(x0_sources_load) == len(x0_sources) and (x0_sources_load == np.asarray(x0_sources)).all(), f'Settings and loaded data differs: x0={x0_sources} !=  x0_loaded={x0_sources_load}'
