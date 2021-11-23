@@ -22,7 +22,7 @@ from models.datastructures import BoundaryType
 import datahandlers.reference_data_setup as ref
 
 ### SETTINGS ###
-id_dir = 'freq_dep_sine_3_256_7sources_d01'
+id_dir = 'neumann_srcs3_sine_3_256_7sources'
 settings_filename = 'settings_srcs.json'
 base_dir = "/Users/nikolasborrel/data/pinn"
 
@@ -44,7 +44,7 @@ c_phys = settings.physics.c_phys
 # LOAD REFERENCE GRID
 xt_grid,_,_,_,_,_ = ref.loadDataFromH5(settings.dirs.data_path, tmax=settings.domain.tmax)
 data = mdg.MultiDataContainer(xt_grid)
-r0 = utils.calcSourcePositions(data,settings.domain.x0_sources)
+r0 = utils.calcSourcePositions(data,settings.domain)
 
 checkpoint_path = os.path.join(settings.dirs.models_dir, 'LossType.PINN')
 latest = tf.train.latest_checkpoint(checkpoint_path)

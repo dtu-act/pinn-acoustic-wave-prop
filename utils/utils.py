@@ -7,16 +7,41 @@
 # Licensed under the MIT License.
 # ==============================================================================
 import numpy as np
+from models.datastructures import Domain
 
-def calcSourcePositions(data,x0_sources):
-    r0 = np.empty(len(x0_sources))
-
-    x_data0 = np.asarray(data[0][0][0])
-    for i,s in enumerate(x0_sources):    
-        index = (np.abs(x_data0-s)).argmin()
-        r0[i] = x_data0[index]
+def calcSourcePositions(data, domain: Domain):
     
-    return r0
+    x0_sources = domain.x0_sources
+    Xminmax = domain.Xminmax
+
+    def srcPos1D():
+        xmin = Xminmax[0][0]
+        xmax = Xminmax[1][0]
+
+        x_data0 = np.asarray(data[0][0][0])
+        r0 = np.empty(len(x0_sources))
+
+        for i,s1d in enumerate(x0_sources):
+            s = s1d[0]
+            if s <= 0:
+                rx = xmax - np.abs(xmin - s)/2
+            else:
+                rx = xmin + (xmax - s)/2
+
+            indx_x = (np.abs(x_data0-rx)).argmin()
+            r0[i] = x_data0[indx_x]
+        
+        return r0
+
+    def srcPos2D():
+        raise NotImplementedError()        
+    
+    if domain.spatial_dimension == 1:
+        return srcPos1D()
+    elif domain.spatial_dimension == 2:
+        return srcPos1D()
+    else:
+        raise NotImplementedError()
 
 def extractSignal(r0,x_data,t_data,p_data):
     tol = 10e-5

@@ -41,7 +41,7 @@ fmax = fmax_phys/c_phys
 
 physics = Physics(sigma0=0.2,fmax=fmax,c=c,c_phys=c_phys,rho=1.2)
 
-ppw = 4
+ppw = 8
 lambda_w = c/fmax
 dx = lambda_w/ppw
 dt = dx/c # CFL condition
