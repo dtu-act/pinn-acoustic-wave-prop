@@ -46,9 +46,21 @@ def sciann_gaussianSourceDiff(c: float, fn: float) -> Tuple[Callable, float]:
 
     return source, mu
 
-def sciann_gaussianIC(sigma0: float) -> Callable:
-    source_ic = lambda x,x0: sn.math.exp(-0.5*((x-x0)/sigma0)**2)
-    return source_ic
+def sciann_gaussianIC(sigma0: float, spatial_dim: int) -> Callable:
+    def sciann_gaussianIC_1D() -> Callable:
+        source_ic = lambda x,x0: sn.math.exp(-0.5*((x-x0)/sigma0)**2)
+        return source_ic
+
+    def sciann_gaussianIC_2D() -> Callable:
+        source_ic = lambda x,y,x0,y0: sn.math.exp(-0.5*((x-x0)/sigma0)**2)*sn.math.exp(-0.5*((y-y0)/sigma0)**2)
+        return source_ic
+    
+    if spatial_dim == 1:
+        return sciann_gaussianIC_1D()
+    elif spatial_dim == 2:
+        return sciann_gaussianIC_2D()
+    else:
+        raise NotImplementedError()
 
 def sciann_gaussianIC_fixed(sigma0: float, x0: float) -> Callable:
     source_ic = lambda x: sn.math.exp(-0.5*((x-x0)/sigma0)**2)

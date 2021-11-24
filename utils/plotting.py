@@ -12,28 +12,22 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 import matplotlib.animation as anim
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-from matplotlib.gridspec import GridSpec
 
-import datahandlers.reference_data_setup as ref
-import datahandlers.sciann_multidatagenerator as mdg
+import datahandlers.data_reader_writer as rw
 from utils.dsp import get_fft_values
 
 res = 160
 colormap = cm.magma_r #'Greys' #cm.cividis
 figsize_x, figsize_y = 8, 4
 
-def plotReference(ref_data_path,tmax=None,plotnth=1,figs_dir=None,block_plot=False):
-    def subPlot(x_train, t_train, p_train, x0, fig, ax, plotnth=1):    
-        p1 = ax.tricontourf(
-            x_train[::plotnth], t_train[::plotnth], p_train[::plotnth], res, cmap=colormap)
+def plotReference(grids,p_data,x0_sources,figs_dir=None,block_plot=False):
+    def subPlot(x_train, t_train, p_train, x0, fig, ax):    
+        p1 = ax.tricontourf(x_train, t_train, p_train, res, cmap=colormap)
 
         ax.set_title('x0=%0.2f' % x0)
         divider = make_axes_locatable(ax)
         cax = divider.append_axes('right', size='5%', pad=0.05)
         fig.colorbar(p1, cax=cax, orientation='vertical')
-
-    xt_grid,p_data,_,x0_sources,_,_ = ref.loadDataFromH5(ref_data_path, tmax=tmax)
-    data = mdg.MultiDataContainer(xt_grid)
 
     fig, _ = plt.subplots(int(np.ceil(len(x0_sources)/2)),
                           min(len(x0_sources), 2), figsize=(12, 12))
@@ -42,13 +36,12 @@ def plotReference(ref_data_path,tmax=None,plotnth=1,figs_dir=None,block_plot=Fal
 
     for i, x0 in enumerate(x0_sources):
         ax = fig.axes[i]
-        input_data_i, _ = data[i]
 
-        x_source_i = input_data_i[0].flatten()
-        t_source_i = input_data_i[1].flatten()
-        p_source_i = p_data[i].flatten()
+        x_source_i = np.asarray(grids[i][0]).reshape(-1,1)
+        t_source_i = np.asarray(grids[i][1]).reshape(-1,1)
+        p_source_i = np.asarray(p_data[i]).reshape(-1,1)
 
-        subPlot(x_source_i, t_source_i, p_source_i, x0, fig, ax, plotnth=plotnth)
+        subPlot(x_source_i.flatten(), t_source_i.flatten(), p_source_i.flatten(), x0, fig, ax)
 
         if np.mod(i, 2) == 0:
             ax.set(xlabel='x [m]', ylabel='t [sec]')
@@ -62,20 +55,18 @@ def plotReference(ref_data_path,tmax=None,plotnth=1,figs_dir=None,block_plot=Fal
     
     plt.show(block=block_plot)
 
-def plotSideBySide(x_mesh, t_mesh, p_pred, p_exact, figs_dir=None, plotnth=1, tag='', err='', block_plot=False):
+def plotSideBySide(x_mesh, t_mesh, p_pred, p_exact, figs_dir=None, tag='', err='', block_plot=False):
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 4))
     fig.suptitle('%s, err = %e' % (tag, err))
 
-    p1 = ax1.tricontourf(
-        x_mesh[::plotnth], t_mesh[::plotnth], p_pred[::plotnth], res, cmap=colormap)
+    p1 = ax1.tricontourf(x_mesh, t_mesh, p_pred, res, cmap=colormap)
 
     ax1.set_title('$Prediction, NN(x,t,s)\simeq p(x,t,x0)$')
     divider = make_axes_locatable(ax1)
     cax = divider.append_axes('right', size='5%', pad=0.05)
     fig.colorbar(p1, cax=cax, orientation='vertical')
 
-    p2 = ax2.tricontourf(x_mesh[::plotnth], t_mesh[::plotnth], np.abs(
-        p_exact[::plotnth] - p_pred[::plotnth]), res, cmap=colormap)
+    p2 = ax2.tricontourf(x_mesh, t_mesh, np.abs(p_exact - p_pred), res, cmap=colormap)
 
     ax2.set(xlabel='x [m]m')
     ax2.set_title('Error, $|p(x,t,x0)-NN(x,t,x0)|$')
@@ -121,11 +112,10 @@ def plotData(x_mesh, t_mesh, p, vline=None, path_file=None, path_cbar_file=None,
         
         if v_minmax:
             prec = 3
-            tick_low = v_minmax[0] #min(u[::plotnth])
-            tick_high = v_minmax[1] #max(u[::plotnth])
-            #tick_mid = (tick_high-tick_low)/2
+            tick_low = v_minmax[0]
+            tick_high = v_minmax[1]
             tick_mid = (v_minmax[1]-v_minmax[0])/2
-            cbar = plt.colorbar(cax,ax=ax,ticks=[tick_low, tick_mid, tick_high]) #, orientation="horizontal"
+            cbar = plt.colorbar(cax,ax=ax,ticks=[tick_low, tick_mid, tick_high])
             cbar.set_ticklabels([f'{round(tick_low,prec)}', f'{round(tick_mid,prec)}', f'>{round(tick_high,prec)}'])
         else:
             cbar = plt.colorbar(cax,ax=ax)

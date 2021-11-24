@@ -13,6 +13,7 @@ import os
 from pathlib import Path
 import shutil
 from typing import Callable, List
+import models.sources as sources
 
 import numpy as np
 
@@ -49,10 +50,10 @@ class SourceInfo:
     sigma0: float = None
     source: Callable = None
 
-    def __init__(self, type, sigma0: float, source: Callable):
+    def __init__(self, type, sigma0: float, spatial_dim: int):
         self.type = type
         self.sigma0 = sigma0
-        self.source = source
+        self.source = sources.sciann_gaussianIC(sigma0, spatial_dim)
 
 @dataclass
 class FrequencyDependentImpedance:
@@ -145,7 +146,7 @@ class Domain:
     boundary_cond: BoundaryCondition
 
     spatial_dimension: int
-    Xminmax: List[List[float]]
+    Xbounds: List[List[float]]
     tmax: float
     ppw: float
 
@@ -161,25 +162,25 @@ class Domain:
     ic_points_p: float
     bc_points_p: float
 
-    def __init__(self, Xminmax, tmax, ppw, dt, dx, boundary_cond, source, x0_sources, ic_points_p, bc_points_p):
-        assert(len(Xminmax[0]) == len(Xminmax[1]))
+    def __init__(self, Xbounds, tmax, ppw, dt, dx, boundary_cond, sigma0, x0_sources, ic_points_p, bc_points_p):
+        assert(len(Xbounds[0]) == len(Xbounds[1]))
         
-        if len(Xminmax) > 2:
+        if len(Xbounds) > 2:
             raise NotImplementedError()
 
-        self.spatial_dimension = np.asarray(Xminmax).shape[1]
-        self.Xminmax = Xminmax
+        self.spatial_dimension = np.asarray(Xbounds).shape[1]
+        self.Xbounds = Xbounds
         self.tmax = tmax
         self.ppw = ppw
         self.dt = dt
         self.dx = dx
         self.boundary_cond = boundary_cond
-        self.source = source
+        self.source = SourceInfo(SourceType.IC, sigma0, self.spatial_dimension)
         self.x0_sources = x0_sources
         self.ic_points_p = ic_points_p
         self.bc_points_p = bc_points_p
                 
-        self.nX = ((np.asarray(Xminmax[1])-np.asarray(Xminmax[0]))/dx).astype(int) # number of spatial points
+        self.nX = ((np.asarray(Xbounds[1])-np.asarray(Xbounds[0]))/dx).astype(int) # number of spatial points
         self.nt = int(tmax/dt) # number of temporal steps
 
     @property

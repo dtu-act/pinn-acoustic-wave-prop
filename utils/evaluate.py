@@ -9,8 +9,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import os
-import datahandlers.reference_data_setup as ref
-import datahandlers.sciann_multidatagenerator as mdg
+import datahandlers.data_reader_writer as rw
 from setup.settings import Settings
 import utils.plotting as plot
 import utils.animations as anim
@@ -19,14 +18,14 @@ from utils.utils import extractSignal
 def evaluatePlotWaveSideBySide(m_pinn,funcs,settings,tag=''):
     """ Plot predicted wave propagation and L1 error side-by-side for each source position """
 
-    def eval(m, funcs, x_data, t_data, p_data, x0_data, tag='', c_denorm=1, figs_dir=None):        
+    def eval(m, funcs, x_data, t_data, p_ref_data, x0_sources, tag='', c_denorm=1, figs_dir=None):        
         p = funcs.p
 
-        for i, _ in enumerate(x0_data):
-            x_data_i = x_data[i]
-            t_data_i = t_data[i]
-            p_ref_data_i = p_data[i]
-            x0_data_i = x0_data[i]
+        for i, x0 in enumerate(x0_sources):
+            x_data_i = np.asarray(x_data[i]).reshape(-1,1)
+            t_data_i = np.asarray(t_data[i]).reshape(-1,1)
+            p_ref_data_i = np.asarray(p_ref_data[i]).reshape(-1,1)
+            x0_data_i = np.asarray([[x0],]*len(x_data_i))
 
             p_pred_data_i = p.eval(m, [x_data_i, t_data_i, x0_data_i])
 
@@ -37,7 +36,7 @@ def evaluatePlotWaveSideBySide(m_pinn,funcs,settings,tag=''):
             # all x0 values are the same for each source
             tag_p_i = "p prediction (%s), x0=%0.2f" % (tag, x0_data_i[0])
             
-            plot.plotSideBySide(x_data_i.flatten(), (t_data_i.flatten()/c_denorm), p_pred_data_i.flatten(), p_ref_data_i.flatten(),
+            plot.plotSideBySide(x_data_i.flatten(), t_data_i.flatten()/c_denorm, p_pred_data_i.flatten(), p_ref_data_i.flatten(),
                 figs_dir=figs_dir, tag=tag_p_i, err=mean_err)
     
     tmax = settings.domain.tmax
@@ -45,19 +44,14 @@ def evaluatePlotWaveSideBySide(m_pinn,funcs,settings,tag=''):
     figs_dir = settings.dirs.figs_dir
     show_plots = settings.show_plots
 
-    xt_grid,p_ref_data,_,x0_sources,_,_ = ref.loadDataFromH5(data_path, tmax=tmax)
-
-    data = mdg.MultiDataContainer(xt_grid)
-    x0_ref_data = np.asarray([[[x0],]*len(data[i][0][0]) for i,x0 in enumerate(x0_sources)])
+    grids,p_ref_data,x0_sources,_,_ = rw.loadDataFromH5(data_path, tmax=tmax)
 
     # separate data
-    x_ref_data = list([data[i][0][0] for i,_ in enumerate(x0_sources)])
-    t_ref_data = list([data[i][0][1] for i,_ in enumerate(x0_sources)])
+    x_ref_data = list([grids[i][0] for i,_ in enumerate(x0_sources)])
+    t_ref_data = list([grids[i][1] for i,_ in enumerate(x0_sources)])
 
-    eval(m_pinn, funcs, x_ref_data, t_ref_data, p_ref_data, x0_ref_data, 
-        figs_dir=figs_dir, tag=tag)
-
-    plot.plotReference(data_path,tmax,figs_dir=figs_dir)
+    eval(m_pinn, funcs, x_ref_data, t_ref_data, p_ref_data, x0_sources, figs_dir=figs_dir, tag=tag)
+    plot.plotReference(grids,p_ref_data,x0_sources,figs_dir=figs_dir)
     
     if show_plots:
         plt.show()
@@ -66,23 +60,23 @@ def evaluatePlotAccumulators(m_pinn,funcs,accum,settings:Settings,tag='',do_anim
     """ Plot and animate accumulators for for each source position
     """
 
-    def eval(m, funcs, accum, xbounds, t_data, x_data, x0_data, p_ref_data, acc_ref_l_scrs, acc_ref_r_scrs, 
+    def eval(m, funcs, accum, xbounds, t_data, x_data, x0_sources, p_ref_data, acc_ref_l_scrs, acc_ref_r_scrs, 
         accumulator_norm, c_phys, figs_dir=None, tag='', do_animations=False):        
         
         p = funcs.p
 
-        for j, _ in enumerate(x0_data):
+        for j, x0 in enumerate(x0_sources):
+            x_data_i = np.asarray(x_data[i]).reshape(-1,1)
+            t_data_i = np.asarray(t_data[i]).reshape(-1,1)
+            p_ref_data_i = np.asarray(p_ref_data[i]).reshape(-1,1)
+            x0_data_i = np.asarray([[x0],]*len(x_data_i))
+
             t_unique = np.unique(t_data[j])
             x_unique = np.unique(x_data[j])
 
-            t_data_i = t_data[j]
-            x_data_i = x_data[j]
-            p_ref_data_i = p_ref_data[j]
-            x0_data_i = np.asarray([x0_data[j][0]]*len(t_data_i)) # repeat source position corresponding to t resolution
-
             x_l = np.asarray([xbounds[0]]*len(t_unique)) # repeat left boundary position corresponding to t resolution
             x_r = np.asarray([xbounds[1]]*len(t_unique)) # repeat right boundary position corresponding to t resolution
-            x0_unique = np.asarray([x0_data[j][0]]*len(t_unique)) # repeat source position corresponding to t resolution
+            x0_unique = np.asarray([[x0],]*len(t_unique)) # repeat source position corresponding to t resolution
 
             acc_ref_l = acc_ref_l_scrs[j]
             acc_ref_r = acc_ref_r_scrs[j]
@@ -110,8 +104,6 @@ def evaluatePlotAccumulators(m_pinn,funcs,accum,settings:Settings,tag='',do_anim
             p_pred = p_pred_data_i.reshape(len(t_unique),len(x_unique))
             p_ref = p_ref_data_i.reshape(len(t_unique),len(x_unique))
 
-            x0 = x0_data[j].flatten()[0]
-
             plot.plotAccumulators(t_unique/c_phys, acc_pred_l, acc_pred_r, acc_ref_l, acc_ref_r, x0, labels_acc, figs_dir=figs_dir, tag=f'{tag}_src{j}')
 
             if do_animations and i == 0:
@@ -123,21 +115,18 @@ def evaluatePlotAccumulators(m_pinn,funcs,accum,settings:Settings,tag='',do_anim
     tmax = settings.domain.tmax
     accumulator_norm = settings.network.ade_nn.accumulator_norm
     figs_dir = settings.dirs.figs_dir
-    show_plots=False
-    do_animations=False
+    show_plots = False
+    do_animations = False
 
-    xt_grid,p_data,_,x0_sources,acc_ref_l_srcs,acc_ref_r_srcs = ref.loadDataFromH5(data_path, tmax=tmax)
-
-    data = mdg.MultiDataContainer(xt_grid)
-    x0_data = np.asarray([[[x0],]*len(data[i][0][0]) for i,x0 in enumerate(x0_sources)])
+    grids,p_data,_,x0_sources,acc_ref_l_srcs,acc_ref_r_srcs = rw.loadDataFromH5(data_path, tmax=tmax)
 
     # separate data
-    x_data = list([data[i][0][0] for i,_ in enumerate(x0_sources)])
-    t_data = list([data[i][0][1] for i,_ in enumerate(x0_sources)])
+    x_data = list([grids[i][0] for i,_ in enumerate(x0_sources)])
+    t_data = list([grids[i][1] for i,_ in enumerate(x0_sources)])
 
-    xbounds = [np.min(data[0][0][0]), np.max(data[0][0][0])]
+    xbounds = settings.domain.Xbounds
 
-    eval(m_pinn, funcs, accum, xbounds, t_data, x_data, x0_data, p_data, acc_ref_l_srcs,acc_ref_r_srcs, 
+    eval(m_pinn, funcs, accum, xbounds, t_data, x_data, x0_sources, p_data, acc_ref_l_srcs,acc_ref_r_srcs, 
         accumulator_norm, settings.physics.c_phys, figs_dir=figs_dir, tag=tag, do_animations=do_animations)
     
     if show_plots:
@@ -165,7 +154,6 @@ def evaluatePlotIR_TF(m,funcs,settings,r0_list,c_phys,figs_dir=None):
         print(f'(src,rec) = ({x0},{np.round(r0,3)})')
         print(f'Mean/max err: {mean_err} / {np.round(max(err_L1),3)}')
         print(f'Mean rel. err: {np.round(mean_err_rel*100,1)}% / {np.round(20*np.log10(1 - mean_err_rel), 1)} dB')
-        #print(f'Max rel. err %/dB: {np.round(max(err_rel),3)} / {20*np.log(err_rel)}')
         print('---------------')
 
         return mean_err, mean_err_rel, err_L1, err_rel
@@ -175,22 +163,19 @@ def evaluatePlotIR_TF(m,funcs,settings,r0_list,c_phys,figs_dir=None):
     if figs_dir==None:
         figs_dir = settings.dirs.figs_dir
 
-    xt_grid,p_ref_data,_,x0_sources,_,_ = ref.loadDataFromH5(data_path, tmax=tmax)
-
-    data = mdg.MultiDataContainer(xt_grid)
-    x0_data = np.asarray([[[x0],]*len(data[i][0][0]) for i,x0 in enumerate(x0_sources)])
+    grids,p_ref_data,x0_sources,_,_ = rw.loadDataFromH5(data_path, tmax=tmax)
 
     # separate data
-    x_data = list([data[i][0][0] for i,_ in enumerate(x0_sources)])
-    t_data = list([data[i][0][1] for i,_ in enumerate(x0_sources)])
+    x_data = list([grids[i][0] for i,_ in enumerate(x0_sources)])
+    t_data = list([grids[i][1] for i,_ in enumerate(x0_sources)])
 
     p = funcs.p
         
-    for i, x0 in enumerate(x0_data):
-        x_data_i = x_data[i]
-        t_data_i = t_data[i]
-        p_ref_data_i = p_ref_data[i]
-        x0_data_i = x0_data[i]
+    for i, x0 in enumerate(x0_sources):
+        x_data_i = np.asarray(x_data[i]).reshape(-1,1)
+        t_data_i = np.asarray(t_data[i]).reshape(-1,1)
+        p_ref_data_i = np.asarray(p_ref_data[i]).reshape(-1,1)
+        x0_data_i = np.asarray([[x0],]*len(x_data_i))
         r0 = r0_list[i]
 
         p_pred_data_i = p.eval(m, [x_data_i, t_data_i, x0_data_i])
@@ -216,23 +201,19 @@ def evaluatePlotAtReceiverPositions(m,funcs,settings,r0_list,figs_dir=None):
     if figs_dir==None:
         figs_dir = settings.dirs.figs_dir
 
-    xt_grid,p_ref_data,_,x0_sources,_,_ = ref.loadDataFromH5(data_path, tmax=tmax)
-
-    data = mdg.MultiDataContainer(xt_grid)
-    x0_data = np.asarray([[[x0],]*len(data[i][0][0]) for i,x0 in enumerate(x0_sources)])
+    grids,p_ref_data,x0_sources,_,_ = rw.loadDataFromH5(data_path, tmax=tmax)
 
     # separate data
-    x_data = list([data[i][0][0] for i,_ in enumerate(x0_sources)])
-    t_data = list([data[i][0][1] for i,_ in enumerate(x0_sources)])
+    x_data = list([grids[i][0] for i,_ in enumerate(x0_sources)])
+    t_data = list([grids[i][1] for i,_ in enumerate(x0_sources)])
 
     p = funcs.p
 
-    for i, _ in enumerate(x0_data):    
-        x_data_i = x_data[i]
-        t_data_i = t_data[i]
-        p_ref_data_i = p_ref_data[i]
-        x0_data_i = x0_data[i]
-        x0 = x0_data_i[0]
+    for i, x0 in enumerate(x0_sources):
+        x_data_i = np.asarray(x_data[i]).reshape(-1,1)
+        t_data_i = np.asarray(t_data[i]).reshape(-1,1)
+        p_ref_data_i = np.asarray(p_ref_data[i]).reshape(-1,1)
+        x0_data_i = np.asarray([[x0],]*len(x_data_i))
         r0 = r0_list[i]
 
         p_pred_data_i = p.eval(m, [x_data_i, t_data_i, x0_data_i])
@@ -266,14 +247,11 @@ def evaluateAnimateWave(m, funcs, settings, receiver_pos, c_phys, title=''):
     tmax = settings.domain.tmax
     figs_dir = settings.dirs.figs_dir
 
-    xt_grid,p_ref_data,_,x0_sources,_,_ = ref.loadDataFromH5(data_path, tmax=tmax)
-
-    data = mdg.MultiDataContainer(xt_grid)
-    x0_data = np.asarray([[[x0],]*len(data[i][0][0]) for i,x0 in enumerate(x0_sources)])
+    grids,p_ref_data,x0_sources,_,_ = rw.loadDataFromH5(data_path, tmax=tmax)
 
     # separate data
-    x_data = list([data[i][0][0] for i,_ in enumerate(x0_sources)])
-    t_data = list([data[i][0][1] for i,_ in enumerate(x0_sources)])
+    x_data = list([grids[i][0] for i,_ in enumerate(x0_sources)])
+    t_data = list([grids[i][1] for i,_ in enumerate(x0_sources)])
 
     p = funcs.p
 
@@ -282,11 +260,11 @@ def evaluateAnimateWave(m, funcs, settings, receiver_pos, c_phys, title=''):
     p_r0_preds = []
     p_r0_refs = []
 
-    for i, _ in enumerate(x0_data):
-        x_data_i = x_data[i]
-        t_data_i = t_data[i]
-        p_data_i = p_ref_data[i]
-        x0_data_i = x0_data[i]
+    for i, x0 in enumerate(x0_sources):
+        x_data_i = np.asarray(x_data[i]).reshape(-1,1)
+        t_data_i = np.asarray(t_data[i]).reshape(-1,1)
+        p_ref_data_i = np.asarray(p_ref_data[i]).reshape(-1,1)
+        x0_data_i = np.asarray([[x0],]*len(x_data_i))
 
         p_pred_data_i = p.eval(m, [x_data_i, t_data_i, x0_data_i])
 
@@ -295,11 +273,11 @@ def evaluateAnimateWave(m, funcs, settings, receiver_pos, c_phys, title=''):
         t = np.unique(t_data_i.flatten())
         x = np.unique(x_data_i.flatten())
 
-        p_r0_ref,_ = extractSignal(r0,x_data_i,t_data_i,p_data_i)
+        p_r0_ref,_ = extractSignal(r0,x_data_i,t_data_i,p_ref_data_i)
         p_r0_pred,_ = extractSignal(r0,x_data_i,t_data_i,p_pred_data_i)
 
         p_pred = p_pred_data_i.reshape(len(t),len(x))
-        p_ref = p_data_i.reshape(len(t),len(x))
+        p_ref = p_ref_data_i.reshape(len(t),len(x))
 
         p_preds.append(p_pred)
         p_refs.append(p_ref)

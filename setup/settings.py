@@ -8,10 +8,8 @@
 # Licensed under the MIT License.
 # ==============================================================================
 from dataclasses import dataclass
-from models.datastructures import ADENeuralNetwork, BoundaryType, Domain, InputOutputDirs, NetworkSettings, Physics, PressureNeuralNetwork, SourceInfo, SourceType, TransferLearning
-
+from models.datastructures import ADENeuralNetwork, BoundaryType, Domain, InputOutputDirs, NetworkSettings, Physics, PressureNeuralNetwork, TransferLearning
 import setup.parsers as parsers
-import models.sources as sources
 
 @dataclass
 class Settings:
@@ -55,14 +53,13 @@ class Settings:
         ic_points_p = settings_dict['ic_points_distr'] # percentage of points refined at t=0 (only applied for IC energy)
         bc_points_p = settings_dict['bc_points_distr'] # precentage of points refined at boundaries
         
-        self.dirs = InputOutputDirs(settings_dict,base_dir=base_dir)                        
-        source = SourceInfo(SourceType.IC, sigma0, sources.sciann_gaussianIC(sigma0))
+        self.dirs = InputOutputDirs(settings_dict,base_dir=base_dir)
 
         lambda_w = c/fmax
         dx = lambda_w/ppw
         dt = dx/c # CFL condition (FDTD)
 
-        self.domain = Domain([Xmin, Xmax], tmax, ppw, dt, dx, boundary_cond, source, x0_sources, ic_points_p, bc_points_p)
+        self.domain = Domain([Xmin, Xmax], tmax, ppw, dt, dx, boundary_cond, sigma0, x0_sources, ic_points_p, bc_points_p)
         
         activation = settings_dict['activation']
         num_layers = settings_dict['num_layers']
@@ -71,12 +68,12 @@ class Settings:
         
         p_nn = PressureNeuralNetwork(activation,num_layers,num_neurons,weights)
 
-        if boundary_cond.type == BoundaryType.IMPEDANCE_FREQ_DEP:            
+        if boundary_cond.type == BoundaryType.IMPEDANCE_FREQ_DEP:
             activation_ade = settings_dict['activation_ade']
             num_layers_ade = settings_dict['num_layers_ade']
             num_neurons_ade = settings_dict['num_neurons_ade']
             accumulator_norm = settings_dict['accumulator_factors']
-            weights: parsers.setupLossPenalties(settings_dict) # TODO
+            weights: parsers.setupLossPenalties(settings_dict)
             ade_nn = ADENeuralNetwork(activation_ade,num_layers_ade,num_neurons_ade,accumulator_norm,weights)
         else:
             ade_nn = None

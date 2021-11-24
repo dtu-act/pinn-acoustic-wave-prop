@@ -19,14 +19,14 @@ from utils.evaluate import evaluatePlotIR_TF, evaluatePlotAtReceiverPositions, e
 import setup.configurations as configs
 import setup.parsers as parsers
 from models.datastructures import BoundaryType
-import datahandlers.reference_data_setup as ref
+import datahandlers.data_reader_writer as rw
 
 ### SETTINGS ###
 id_dir = 'neumann_srcs3_sine_3_256_7sources'
 settings_filename = 'settings_srcs.json'
 base_dir = "/Users/nikolasborrel/data/pinn"
 
-do_plots_for_paper = False
+do_plots_for_paper = True
 do_animations = True
 do_side_by_side_plot = True
 
@@ -42,9 +42,8 @@ validateData(settings)
 c_phys = settings.physics.c_phys
 
 # LOAD REFERENCE GRID
-xt_grid,_,_,_,_,_ = ref.loadDataFromH5(settings.dirs.data_path, tmax=settings.domain.tmax)
-data = mdg.MultiDataContainer(xt_grid)
-r0 = utils.calcSourcePositions(data,settings.domain)
+grids,_,_,_,_ = rw.loadDataFromH5(settings.dirs.data_path, tmax=settings.domain.tmax)
+r0 = utils.calcSourcePositions(grids,settings.domain)
 
 checkpoint_path = os.path.join(settings.dirs.models_dir, 'LossType.PINN')
 latest = tf.train.latest_checkpoint(checkpoint_path)

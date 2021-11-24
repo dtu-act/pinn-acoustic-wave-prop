@@ -29,7 +29,7 @@ def generateNonUniformMesh(domain: Domain, hypercube=True):
         targets = ["domain", "ic", "bc-left", "bc-right", "bc", "all"]
         target_indxs = TargetIndexes1D(domain=0,ic=1,bc_left=2,bc_right=3,bc=4,all=5)
         data_gen = dg.DataGeneratorXT(
-            X = [domain.Xminmax[0][0], domain.Xminmax[1][0]],
+            X = [domain.Xbounds[0][0], domain.Xbounds[1][0]],
             T = [0,domain.tmax],
             bc_points_p = domain.bc_points_p,
             ic_points_p = domain.ic_points_p,
@@ -41,8 +41,8 @@ def generateNonUniformMesh(domain: Domain, hypercube=True):
         targets = ["domain", "ic", "bc-left", "bc-right", 'bc-bot', 'bc-top', "bc", "all"]
         target_indxs = TargetIndexes2D(domain=0,ic=1,bc_left=2,bc_right=3,bc_bot=4,bc_top=5,bc=6,all=7)
         data_gen = dg.DataGeneratorXYT(
-            X = [domain.Xminmax[0][0], domain.Xminmax[1][0]],
-            Y = [domain.Xminmax[0][1], domain.Xminmax[1][1]],
+            X = [domain.Xbounds[0][0], domain.Xbounds[1][0]],
+            Y = [domain.Xbounds[0][1], domain.Xbounds[1][1]],
             T = [0,domain.tmax],
             bc_points_p = domain.bc_points_p,
             ic_points_p = domain.ic_points_p,
@@ -74,7 +74,7 @@ def generateUniformMesh(domain: Domain, offset=0):
     if domain.spatial_dimension == 1:
         for _ in range(domain.num_sources):
             x,t = np.meshgrid(
-                np.linspace(domain.Xminmax[0][0], domain.Xminmax[1][0], domain.nX[0]),
+                np.linspace(domain.Xbounds[0][0], domain.Xbounds[1][0], domain.nX[0]),
                 np.linspace(0, domain.tmax, domain.nt))
             grids.append([x,t])
         # matrix indexes: (t, x) with size nt X nx
@@ -82,8 +82,8 @@ def generateUniformMesh(domain: Domain, offset=0):
     elif domain.spatial_dimension == 2:
         for _ in range(domain.num_sources):
             x,y,t = np.meshgrid(
-                np.linspace(domain.Xminmax[0][0], domain.Xminmax[1][0], domain.nX[0]),
-                np.linspace(domain.Xminmax[0][1], domain.Xminmax[1][1], domain.nX[1]), 
+                np.linspace(domain.Xbounds[0][0], domain.Xbounds[1][0], domain.nX[0]),
+                np.linspace(domain.Xbounds[0][1], domain.Xbounds[1][1], domain.nX[1]), 
                 np.linspace(0, domain.tmax, domain.nt))
              
              # transpose to get matrix indexes: (t, x, y) with size nt X nx X ny
@@ -92,7 +92,6 @@ def generateUniformMesh(domain: Domain, offset=0):
     else:
         raise NotImplementedError()
 
-    data = mdg.MultiDataContainer(grids, offset=offset)
-    x0_data = np.asarray([[x0,]*len(data[i][0][0]) for i,x0 in enumerate(domain.x0_sources)])
+    x0_data = np.asarray([[x0,]*len(grids[i][0]) for i,x0 in enumerate(domain.x0_sources)])
 
-    return data, x0_data, target_indxs
+    return grids, x0_data, target_indxs

@@ -135,12 +135,12 @@ def animateAccumulators(t, x, p_pred, p_ref, acc_pred_l, acc_pred_r, acc_ref_l, 
 
     plt.show(block=False)    
 
-def plotAnimation(x_mesh, t_mesh, p_pred, p_exact, figs_dir=None, plotnth=1, tag=''):
-    t = np.unique(t_mesh[::plotnth])
-    x = np.unique(x_mesh[::plotnth])
+def plotAnimation(x_mesh, t_mesh, p_pred, p_exact, figs_dir=None, tag=''):
+    t = np.unique(t_mesh)
+    x = np.unique(x_mesh)
 
-    p_pred_mat = p_pred[::plotnth].reshape(len(t),len(x))
-    p_exact_mat = p_exact[::plotnth].reshape(len(t),len(x))    
+    p_pred_mat = p_pred.reshape(len(t),len(x))
+    p_exact_mat = p_exact.reshape(len(t),len(x))    
 
     plt.figure(figsize=(10,6))
     ax1 = plt.subplot(3,2,1)

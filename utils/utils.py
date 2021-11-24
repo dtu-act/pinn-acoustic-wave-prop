@@ -9,16 +9,16 @@
 import numpy as np
 from models.datastructures import Domain
 
-def calcSourcePositions(data, domain: Domain):
+def calcSourcePositions(grids, domain: Domain):
     
     x0_sources = domain.x0_sources
-    Xminmax = domain.Xminmax
+    Xbounds = domain.Xbounds
 
     def srcPos1D():
-        xmin = Xminmax[0][0]
-        xmax = Xminmax[1][0]
+        xmin = Xbounds[0][0]
+        xmax = Xbounds[1][0]
 
-        x_data0 = np.asarray(data[0][0][0])
+        x_data0 = np.asarray(grids[0][0][0])
         r0 = np.empty(len(x0_sources))
 
         for i,s1d in enumerate(x0_sources):
