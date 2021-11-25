@@ -20,7 +20,7 @@ res = 160
 colormap = cm.magma_r #'Greys' #cm.cividis
 figsize_x, figsize_y = 8, 4
 
-def plotReference(grids,p_data,x0_sources,figs_dir=None,block_plot=False):
+def plotReference(grid,p_data,x0_sources,figs_dir=None,block_plot=False):
     def subPlot(x_train, t_train, p_train, x0, fig, ax):    
         p1 = ax.tricontourf(x_train, t_train, p_train, res, cmap=colormap)
 
@@ -34,14 +34,15 @@ def plotReference(grids,p_data,x0_sources,figs_dir=None,block_plot=False):
 
     fig.suptitle('Solutions for source positions')
 
-    for i, x0 in enumerate(x0_sources):
+    x_source_i = np.asarray(grid[0]).reshape(-1,1)
+    t_source_i = np.asarray(grid[1]).reshape(-1,1)
+
+    for i, x0 in enumerate(x0_sources):        
         ax = fig.axes[i]
-
-        x_source_i = np.asarray(grids[i][0]).reshape(-1,1)
-        t_source_i = np.asarray(grids[i][1]).reshape(-1,1)
         p_source_i = np.asarray(p_data[i]).reshape(-1,1)
+        x0 = np.asarray(x0)
 
-        subPlot(x_source_i.flatten(), t_source_i.flatten(), p_source_i.flatten(), x0, fig, ax)
+        subPlot(x_source_i.flatten(), t_source_i.flatten(), p_source_i.flatten(), x0.flatten(), fig, ax)
 
         if np.mod(i, 2) == 0:
             ax.set(xlabel='x [m]', ylabel='t [sec]')

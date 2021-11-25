@@ -37,17 +37,17 @@
         "trainable": false
     },
     
-    "boundary_type": "NEUMANN",
-    "data_filename": "neumann_1D_1000.00Hz_sigma0.2_c1_srcs7.hdf5",
+    "boundary_type": "IMPEDANCE_FREQ_INDEP",
+    "data_filename": "freq_indep_1D_1000.00Hz_sigma0.2_c1_xi5.83_srcs7.hdf5",
 
     "boundary_type_neumann": "NEUMANN",
-    "data_filename_neumann": "neumann_1D_1000.00Hz_sigma0.2_c1.hdf5",
+    "data_filename_neumann": "neumann_1D_1000.00Hz_sigma0.2_c1_srcs7.hdf5",
 
     "boundary_type_dirich": "DIRICHLET",
-    "data_filename_dirich": "dirichlet_1D_1000.00Hz_sigma0.2_c1.hdf5",
+    "data_filename_dirich": "dirichlet_1D_1000.00Hz_sigma0.2_c1_srcs7.hdf5",
 
     "boundary_type_indep": "IMPEDANCE_FREQ_INDEP",
-    "data_filename_indep": "freq_indep_1D_1000.00Hz_sigma0.2_c1_xi5.83.hdf5",
+    "data_filename_indep": "freq_indep_1D_1000.00Hz_sigma0.2_c1_xi5.83_srcs7.hdf5",
 
     "boundary_type_dep": "IMPEDANCE_FREQ_DEP",
     "data_filename_dep": "freq_dep_1D_1000.00Hz_sigma0.2_c1_d0.10_srcs7.hdf5",

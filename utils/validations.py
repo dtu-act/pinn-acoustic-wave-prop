@@ -28,9 +28,9 @@ def plotGridSource(data, settings: Settings, tag=''):
         fig.savefig(path_plot)
 
     # plot source/IC
-    x,t,s,_,_ = models.setupNN_PDE(settings.network.p_nn) # dummy - needed to evaluate/test source defined as functional 
+    funcs = models.setupNN_PDE(settings) # dummy - needed to evaluate/test source defined as functional 
     if source_info.type == SourceType.IC:
-        source_f = source_info.source(x,s)
+        source_f = source_info.source(funcs.x,funcs.x0)
 
         plt.figure(figsize=(10, 8))
         for i,x0 in enumerate(x0_sources):

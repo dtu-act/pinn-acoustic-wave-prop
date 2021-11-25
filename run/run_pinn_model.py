@@ -45,12 +45,21 @@ def train(settings_path):
     
     plotGridSource(data, settings)
     
-    x_pinn_train = np.asarray(data.inputs_data[0])
     t_pinn_train = np.asarray(data.inputs_data[1])
     x0_pinn_train = np.asarray(x0_input_data).reshape(-1,1)
 
+    if settings.domain.spatial_dimension == 1:
+        x_pinn_train = np.asarray(data.inputs_data[0])
+        input_data = [x_pinn_train, t_pinn_train, x0_pinn_train]
+    elif settings.domain.spatial_dimension == 2:
+        x_pinn_train = np.asarray(data.inputs_data[0])
+        y_pinn_train = np.asarray(data.inputs_data[0])
+        input_data = [x_pinn_train, y_pinn_train, t_pinn_train, x0_pinn_train]
+    else:
+        raise NotImplementedError()
+
     ### TRAIN AND EVALUATE ###
-    funcs =  models.setupNN_PDE(settings.network.p_nn)
+    funcs = models.setupNN_PDE(settings)
     accs = models.setupNN_ODE(funcs, settings.network.ade_nn) if settings.domain.boundary_cond.type == BoundaryType.IMPEDANCE_FREQ_DEP else None
 
     if settings.do_transfer_learning:
@@ -70,7 +79,7 @@ def train(settings_path):
     m_pinn.summary()
 
     h_pinn = m_pinn.train(
-        [x_pinn_train, t_pinn_train, x0_pinn_train], targets_pinn,
+        input_data, targets_pinn,
         batch_size=settings.network.batch_size, epochs=settings.network.epochs, 
         learning_rate=settings.network.learning_rate, stop_loss_value=settings.network.stop_loss_value,
         callbacks=[cp_callback_f(LossType.PINN), tb_callback_f(LossType.PINN)], verbose=settings.verbose_out)

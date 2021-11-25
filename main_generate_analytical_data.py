@@ -10,7 +10,6 @@ import numpy as np
 import os
 
 import datahandlers.meshing as meshing
-import models.sources as sources
 from models.datastructures import Domain, Physics, BoundaryType
 import utils.wave_equation_solutions as sol
 import datahandlers.data_reader_writer as rw
@@ -23,9 +22,9 @@ from utils.plotting import plotReference
 base_dir = "/Users/nikolasborrel/data/pinn"
 
 boundary_type = "NEUMANN" # DIRICHLET | NEUMANN
-#x0_sources = [[-0.3],[-0.15],[0.0],[0.15],[0.3]]
+x0_sources = [[-0.3],[-0.15],[0.0],[0.15],[0.3]]
 #x0_sources = [[-0.3],[-0.2],[-0.1],[0.0],[0.1],[0.2],[0.3]]
-x0_sources = [[0.0]]
+#x0_sources = [[0.0]]
 Xbounds = [[-1], [1]]
 # x0_sources = [[-0.3,-0.3],[-0.2,-0.2],[-0.1,-0.1],[0.0,0.0],[0.1,0.1],[0.2,0.2],[0.3,0.3]]
 # Xbounds = [[-1,-1], [1,1]]
@@ -66,19 +65,16 @@ if not (boundary_cond.type == BoundaryType.DIRICHLET or boundary_cond.type == Bo
 
 if grid_type == 'uniform':
     path_output_data = os.path.join(base_dir, f"reference_data/uniform/{filename}")
-    grids,x0_eval_data,target_sim_indxs = meshing.generateUniformMesh(domain)    
-    p_eval_data = sol.generateSolutionData(grids, x0_sources, c, physics.sigma0, boundary_cond.type)
+    grid,x0_eval_data = meshing.generateUniformMesh(domain)    
+    p_eval_data = sol.generateSolutionData(grid, x0_sources, c, physics.sigma0, boundary_cond.type)
 elif grid_type == 'non-uniform':
     path_output_data = os.path.join(base_dir, f"reference_data/nonuniform/{filename}")
-    data, x0_input_data, target_sim_indxs = meshing.generateNonUniformMesh(domain)
-    grids = list(map(lambda x: x[0], data)) # extract mesh (without target) into array
-    p_eval_data = sol.generateSolutionData(grids, x0_sources, c, physics.sigma0, boundary_cond.type)
+    data, x0_input_data = meshing.generateNonUniformMesh(domain)
+    grid = data[0][0] # extract mesh 0 (without target) into array
+    p_eval_data = sol.generateSolutionData(grid, x0_sources, c, physics.sigma0, boundary_cond.type)
     x0_eval_data = np.asarray([[x0,]*len(data[i][0][0]) for i,x0 in enumerate(x0_sources)])
 else:
     raise NotImplementedError()
 
-rw.writeDataToHDF5(grids,p_eval_data,domain,physics,path_output_data)
-
-# load written data (testing r/w)
-grids,p_data,x0_sources,_,_ = rw.loadDataFromH5(path_output_data, tmax=tmax)
-plotReference(grids,p_data,x0_sources,block_plot=True)
+rw.writeDataToHDF5(grid,p_eval_data,domain,physics,path_output_data)
+plotReference(grid,p_eval_data,x0_sources,block_plot=True)

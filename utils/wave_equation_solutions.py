@@ -107,18 +107,18 @@ def WaveEquation2D(grid, X0, boundary_cond, c, sigma0, num_reflections=4):
 
     return p
 
-def generateSolutionData(grids, x0_sources, c, sigma0, boundary_cond):
+def generateSolutionData(grid, x0_sources, c, sigma0, boundary_cond):
     p_data = []    
 
     spatial_dim = np.asarray(x0_sources).shape[1]
     for i, x0 in enumerate(x0_sources):
         if spatial_dim == 1:
-            p_sol = WaveEquation1D(grids[i],x0,boundary_cond,c,sigma0)
+            p_sol = WaveEquation1D(grid,x0,boundary_cond,c,sigma0)
         elif spatial_dim == 2:
-            p_sol = WaveEquation2D(grids[i],x0,boundary_cond,c,sigma0)
+            p_sol = WaveEquation2D(grid,x0,boundary_cond,c,sigma0)
         else:
             raise NotImplementedError()
 
-        p_data.append(np.asarray(p_sol)) # NBJ reshape removed
+        p_data.append(np.asarray(p_sol))
 
     return np.asarray(p_data)

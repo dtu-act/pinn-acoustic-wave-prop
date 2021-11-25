@@ -27,7 +27,7 @@ def loadAttrFromH5(path_data):
             tmax = f.attrs['tmax'][0]
 
             x0_sources = f['x0_sources'][()] 
-            tmax_grid = max(f['grids'][0][1].flatten()) # python list
+            tmax_grid = max(f['t_mesh'][()].flatten())
 
             assert tmax == tmax_grid, "tmax is inconsistent"
 
@@ -39,7 +39,7 @@ def loadDataFromH5(path_data, tmax=None):
     """ input
             tmax: normalized max time 
         output
-            grids: is a S X x X y x t dimensional array [i,j]
+            grid: is a x X y x t dimensional array
     """
 
     acc_l_data = []
@@ -49,22 +49,29 @@ def loadDataFromH5(path_data, tmax=None):
         dt = f.attrs['dt'][0]
 
         x0_sources = f['x0_sources'][()]
-        grids_all = np.array(f['grids'][()])
-        sols = f['solutions'][()]
+        t_mesh = np.asarray(f['t_mesh'][()])
+        x_mesh = np.asarray(f['x_mesh'][()])        
+        sols = np.asarray(f['solutions'][()])
 
         if tmax == None:
-            #ilast = len(t)-1
-            ilast = len(grids_all[0,1,:,0]) - 1
-            grids = grids_all.tolist()
+            ilast = len(t_mesh[:,0]) - 1
+            grid = [x_mesh.tolist(), t_mesh.tolist()]
         else:
-            #ilist = [i for i, n in enumerate(t) if abs(n - tmax) < dt/2]
-            # assume all grids have same number of element (analyze first grids[0])
-            ilist = [i for i, n in enumerate(grids_all[0,1,:,0]) if abs(n - tmax) <= dt/2]
+            ilist = [i for i, n in enumerate(t_mesh[:,0]) if abs(n - tmax) <= dt/2]
             if not ilist:
                 raise Exception('t_max exceeds simulation data running time')
             ilast = ilist[0]
-            grids = grids_all[:,:,:ilast+1,:].tolist() # crop w.r.t. time
+            # crop w.r.t. time
+            t = t_mesh[:ilast+1,:].tolist()
+            x = x_mesh[:ilast+1,:].tolist()
+            grid = [x,t]
 
+        sols = sols[:,:ilast+1,:].tolist()
+
+        assert len(sols[0]) == len(grid[0])
+        assert len(sols[0][0]) == len(grid[0][0])
+
+        assert sols
         for i,_ in enumerate(x0_sources):
             if f'acc_l{i}' in f.keys() and f'acc_r{i}' in f.keys():
                 acc_l = f[f'acc_l{i}'][:,:ilast+1]
@@ -72,9 +79,9 @@ def loadDataFromH5(path_data, tmax=None):
                 acc_l_data.append(acc_l)
                 acc_r_data.append(acc_r)
 
-    return grids,sols,x0_sources,acc_l_data,acc_r_data
+    return grid,sols,x0_sources,acc_l_data,acc_r_data
 
-def writeDataToHDF5(grids, solutions, domain: Domain, physics: Physics, path_file: str):
+def writeDataToHDF5(grid, solutions, domain: Domain, physics: Physics, path_file: str):
     """ Write data as HDF5 format
     """
     """ Ex: writeHDF5([1,2,3],[0.1,0.2,0.3],data,[-0.2,0.0,0.2],0.1,1.0,343,0.1,2000,'test1.h5')
@@ -96,7 +103,8 @@ def writeDataToHDF5(grids, solutions, domain: Domain, physics: Physics, path_fil
 
     with h5py.File(path_file, 'w') as f:
         f.create_dataset('x0_sources', data=x0_sources)
-        f.create_dataset('grids', data=grids)
+        f.create_dataset('x_mesh', data=grid[0])
+        f.create_dataset('t_mesh', data=grid[1])
         f.create_dataset('solutions', data=solutions)
         
         # wrap in array to be consistent with data generated from Matlab

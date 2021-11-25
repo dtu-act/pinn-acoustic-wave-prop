@@ -38,10 +38,10 @@ def loadModel(settings: Settings, funcs: SciannFunctionals, accs: Accumulators, 
 
 def setupPinnModels(settings: Settings, funcs: SciannFunctionals, accs: Accumulators, 
     loss_type=LossType.PINN, boundary_cond_override: BoundaryCondition=None, plot_to_file: str=None):
-    """ Setup the model for pinn """
 
-    x,t,x0,p = funcs.x, funcs.t, funcs.x0, funcs.p
-
+    if settings.domain.spatial_dimension > 1:
+        raise NotImplementedError()
+    
     p_nn_weights = settings.network.p_nn.weights
     c = settings.physics.c
     rho = settings.physics.rho
@@ -53,29 +53,29 @@ def setupPinnModels(settings: Settings, funcs: SciannFunctionals, accs: Accumula
         # use specific boundary condition (e.g. when doing transfer learning)
         boundary_condition = boundary_cond_override
 
-     # BOUNDARY LOSSES
+    # BOUNDARY LOSSES
     if boundary_condition.type == BoundaryType.DIRICHLET:
-        BC = dirichletBCLosses(p,boundary_condition,p_nn_weights)
+        BC = dirichletBCLosses(funcs.p,boundary_condition,p_nn_weights)
     elif boundary_condition.type == BoundaryType.NEUMANN:        
-        BC_left,BC_right = neumannBCLosses(x,p,boundary_condition,p_nn_weights)
+        BC_left,BC_right = neumannBCLosses(funcs,boundary_condition,p_nn_weights)
     elif boundary_condition.type == BoundaryType.IMPEDANCE_FREQ_INDEP:
-        BC_left,BC_right = freqIndependentBCLosses(x,t,p,c,boundary_condition,p_nn_weights)
+        BC_left,BC_right = freqIndependentBCLosses(funcs,c,boundary_condition,p_nn_weights)
     elif boundary_condition.type == BoundaryType.IMPEDANCE_FREQ_DEP:
         ade_nn_weights = settings.network.ade_nn.weights
         acc_norm = settings.network.ade_nn.accumulator_norm
 
-        BC_left,BC_right = freqDependentBCLosses(x,t,p,rho,accs,boundary_condition,p_nn_weights,acc_norm)
+        BC_left,BC_right = freqDependentBCLosses(funcs,rho,accs,boundary_condition,p_nn_weights,acc_norm)
 
         phi_acc, psi0_acc, psi1_acc = accs.phi, accs.psi0, accs.psi1        
-        ODE_phi_0, ODE_phi_1, ODE_psi0_0, ODE_psi1_0 = odeLoss(t,p,boundary_condition,ade_nn_weights,acc_norm,phi_acc,psi0_acc,psi1_acc,'lr')
+        ODE_phi_0, ODE_phi_1, ODE_psi0_0, ODE_psi1_0 = odeLoss(funcs,boundary_condition,ade_nn_weights,acc_norm,phi_acc,psi0_acc,psi1_acc,'lr')
     else:
         raise NotImplementedError()
 
     if settings.domain.source.type != SourceType.IC:
         raise NotImplementedError()
     
-    PDE_p = pdeLoss(x,t,p,c,p_nn_weights)
-    IC,IC_t = icLosses(x,t,x0,p,settings.domain.source.source,p_nn_weights)
+    PDE_p = pdeLoss(funcs,c,p_nn_weights)
+    IC,IC_t = icLosses(funcs,settings.domain.source.source,p_nn_weights)
 
     if boundary_condition.type == BoundaryType.IMPEDANCE_FREQ_DEP:
         targets = [PDE_p, 
@@ -95,7 +95,7 @@ def setupPinnModels(settings: Settings, funcs: SciannFunctionals, accs: Accumula
         Path(path_dir).mkdir(parents=True, exist_ok=True)
 
     m = sn.SciModel(
-            inputs = [x, t, x0],
+            inputs = [funcs.x, funcs.t, funcs.x0],
             targets = targets,
             loss_func = "mse",
             optimizer = settings.network.optimizer,
@@ -106,7 +106,7 @@ def setupPinnModels(settings: Settings, funcs: SciannFunctionals, accs: Accumula
 def setupDataModel(settings: Settings):
     """ Setup the model for data (only) """
 
-    x,t,x0,p = setupNN_PDE(settings.network)
+    x,t,x0,p = setupNN_PDE(settings)
     d = sn.Data(sn.rename(p, name='data'))
 
     m = sn.SciModel(
@@ -147,19 +147,33 @@ def setupPinnTargetsTrain(data: DataGeneratorXT, target_indxs: NamedTuple, bound
             tdata[BC_LEFT_ENUM], tdata[BC_RIGHT_ENUM],
             tdata[IC_ENUM],tdata[IC_ENUM]] # [IC_t, IC]
 
-def setupNN_PDE(nn: PressureNeuralNetwork):
+def setupNN_PDE(settings: Settings):
     dtype='float64'
-    x = sn.Variable("x", dtype=dtype)
+
+    nn = settings.network.p_nn
+    dim = settings.domain.spatial_dimension
+
     t = sn.Variable("t", dtype=dtype)
     x0 = sn.Variable("x0", dtype=dtype)
 
+    if dim == 1:
+        x = sn.Variable("x", dtype=dtype)
+        y = None
+        inputs = [x, t, x0]
+    elif dim == 2:
+        x = sn.Variable("x", dtype=dtype)
+        y = sn.Variable("y", dtype=dtype)
+        inputs = [x, y, t, x0]
+    else:
+        raise NotImplementedError()
+
     if nn.activation=='sin':
-        p = sn.Functional("p", [x, t, x0], nn.num_layers*[nn.num_neurons], nn.activation, kernel_initializer=SineInitializer)
+        p = sn.Functional("p", inputs, nn.num_layers*[nn.num_neurons], nn.activation, kernel_initializer=SineInitializer)
         first_layer_sine_init(p,dtype=dtype)
     else:
-        p = sn.Functional("p", [x, t, x0], nn.num_layers*[nn.num_neurons], nn.activation)
+        p = sn.Functional("p", inputs, nn.num_layers*[nn.num_neurons], nn.activation)
 
-    return SciannFunctionals(x,t,x0,p,None)
+    return SciannFunctionals(x,y,t,x0,p,None)
 
 def setAccumulatorsTraineable(acc: Accumulators, traineable: bool):
     if acc == None:
@@ -187,9 +201,9 @@ def setupNN_ODE(funcs: SciannFunctionals, nn: ADENeuralNetwork):
     
     return Accumulators(phi_acc, psi0_acc, psi1_acc)
 
-def pdeLoss(x,t,p,c,weights):
-    """ Returning PDE loss """
+def pdeLoss(funcs,c,weights):
     w_pde = weights.pde
+    x,t,p = funcs.x, funcs.t, funcs.p
 
     p_tt = sn.math.diff(p, t, order=2)
     p_xx = sn.math.diff(p, x, order=2)
@@ -198,10 +212,10 @@ def pdeLoss(x,t,p,c,weights):
 
     return PDE
 
-def odeLoss(t,p,boundary_cond,weights,acc_factors,phi_acc,psi0_acc,psi1_acc,tag_location):
+def odeLoss(funcs,boundary_cond,weights,acc_factors,phi_acc,psi0_acc,psi1_acc,tag_location):
     ws_ade = weights.ade
-
     impedance_data = boundary_cond.impedance_data
+    t,p = funcs.x, funcs.p
 
     lambdas = impedance_data.lambdas
     alpha = impedance_data.alpha
@@ -245,8 +259,9 @@ def dirichletBCLosses(p,boundary_cond,weights):
 
     return BC
 
-def neumannBCLosses(x,p,boundary_cond,weights):
+def neumannBCLosses(funcs,boundary_cond,weights):
     w_bc = weights.bc
+    x,p = funcs.x, funcs.p
 
     p_x = sn.math.diff(p, x, order=1)
     BC_left  = w_bc*(-1*p_x - boundary_cond.v)
@@ -256,9 +271,10 @@ def neumannBCLosses(x,p,boundary_cond,weights):
 
     return BC_left,BC_right
 
-def freqIndependentBCLosses(x,t,p,c,boundary_cond,weights):
+def freqIndependentBCLosses(funcs,c,boundary_cond,weights):
     w_bc = weights.bc
     xi = boundary_cond.xi
+    x,t,p = funcs.x, funcs.t, funcs.p
     
     p_x = sn.math.diff(p, x, order=1)
     p_t = sn.math.diff(p, t, order=1)
@@ -270,9 +286,10 @@ def freqIndependentBCLosses(x,t,p,c,boundary_cond,weights):
 
     return BC_left, BC_right
 
-def freqDependentBCLosses(x,t,p,rho,acc,boundary_cond,weights,acc_factors):    
+def freqDependentBCLosses(funcs,rho,acc,boundary_cond,weights,acc_factors):    
     w_bc = weights.bc
     impedance_data = boundary_cond.impedance_data
+    x,t,p = funcs.x, funcs.t, funcs.p
 
     Yinf = impedance_data.Yinf
     A = impedance_data.A
@@ -296,9 +313,10 @@ def freqDependentBCLosses(x,t,p,rho,acc,boundary_cond,weights,acc_factors):
 
     return BC_left, BC_right
 
-def icLosses(x,t,x0,p,source_f,weights):
+def icLosses(funcs,source_f,weights):
     """ Returning IC losses: IC,IC_t """
     w_ic = weights.ic
+    x,t,x0,p = funcs.x, funcs.t, funcs.x0, funcs.p
 
     # Loss function, initial condition IC
     p_t0 = source_f(x,x0)

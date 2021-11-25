@@ -7,7 +7,6 @@
 # Licensed under the MIT License.
 # ==============================================================================
 import tensorflow as tf
-import datahandlers.sciann_multidatagenerator as mdg
 import os
 from pathlib import Path
 from setup.settings import Settings
@@ -42,8 +41,8 @@ validateData(settings)
 c_phys = settings.physics.c_phys
 
 # LOAD REFERENCE GRID
-grids,_,_,_,_ = rw.loadDataFromH5(settings.dirs.data_path, tmax=settings.domain.tmax)
-r0 = utils.calcSourcePositions(grids,settings.domain)
+grid,_,_,_,_ = rw.loadDataFromH5(settings.dirs.data_path, tmax=settings.domain.tmax)
+r0 = utils.calcSourcePositions(grid,settings.domain)
 
 checkpoint_path = os.path.join(settings.dirs.models_dir, 'LossType.PINN')
 latest = tf.train.latest_checkpoint(checkpoint_path)

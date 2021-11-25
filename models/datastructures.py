@@ -17,7 +17,7 @@ import models.sources as sources
 
 import numpy as np
 
-SciannFunctionals = namedtuple('target_indexes',['x','t','x0','p','v'])
+SciannFunctionals = namedtuple('target_indexes',['x','y','t','x0','p','v'])
 Accumulators = namedtuple('accumulators',['phi','psi0','psi1'])
 
 class BoundaryType(Enum):

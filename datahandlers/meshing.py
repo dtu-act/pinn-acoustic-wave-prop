@@ -68,30 +68,23 @@ def generateUniformMesh(domain: Domain, offset=0):
         [i][]: i source index
         [][k]: k = 0,1, where 0 is X data and 1 is t data
     """
-
-    grids = []
     
     if domain.spatial_dimension == 1:
-        for _ in range(domain.num_sources):
-            x,t = np.meshgrid(
-                np.linspace(domain.Xbounds[0][0], domain.Xbounds[1][0], domain.nX[0]),
-                np.linspace(0, domain.tmax, domain.nt))
-            grids.append([x,t])
+        grid = np.meshgrid(
+            np.linspace(domain.Xbounds[0][0], domain.Xbounds[1][0], domain.nX[0]),
+            np.linspace(0, domain.tmax, domain.nt))
         # matrix indexes: (t, x) with size nt X nx
-        target_indxs = TargetIndexes1D(None,None,None,None,None,all=0)
     elif domain.spatial_dimension == 2:
-        for _ in range(domain.num_sources):
-            x,y,t = np.meshgrid(
-                np.linspace(domain.Xbounds[0][0], domain.Xbounds[1][0], domain.nX[0]),
-                np.linspace(domain.Xbounds[0][1], domain.Xbounds[1][1], domain.nX[1]), 
-                np.linspace(0, domain.tmax, domain.nt))
-             
-             # transpose to get matrix indexes: (t, x, y) with size nt X nx X ny
-            grids.append([np.transpose(x),np.transpose(y),np.transpose(t)])
-        target_indxs = TargetIndexes2D(None,None,None,None,None,None,None,all=0)
+        x,y,t = np.meshgrid(
+            np.linspace(domain.Xbounds[0][0], domain.Xbounds[1][0], domain.nX[0]),
+            np.linspace(domain.Xbounds[0][1], domain.Xbounds[1][1], domain.nX[1]), 
+            np.linspace(0, domain.tmax, domain.nt))
+            
+        # transpose to get matrix indexes: (t, x, y) with size nt X nx X ny
+        grid = [np.transpose(x),np.transpose(y),np.transpose(t)]
     else:
         raise NotImplementedError()
 
-    x0_data = np.asarray([[x0,]*len(grids[i][0]) for i,x0 in enumerate(domain.x0_sources)])
+    x0_data = np.asarray([[x0,]*len(grid[0]) for i,x0 in enumerate(domain.x0_sources)])
 
-    return grids, x0_data, target_indxs
+    return grid, x0_data
