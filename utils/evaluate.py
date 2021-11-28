@@ -112,7 +112,7 @@ def evaluatePlotAccumulators(m_pinn,funcs,accum,settings:Settings,tag='',do_anim
     accumulator_norm = settings.network.ade_nn.accumulator_norm
     figs_dir = settings.dirs.figs_dir
     show_plots = False
-    do_animations = True
+    do_animations = False
 
     grid,p_data,x0_sources,acc_ref_l_srcs,acc_ref_r_srcs = rw.loadDataFromH5(data_path, tmax=tmax)
 

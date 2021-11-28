@@ -13,7 +13,7 @@ import tensorflow as tf
 from pathlib import Path
 from datahandlers.sciann_datagenerator import DataGeneratorXT
 
-from models.datastructures import ADENeuralNetwork, BoundaryCondition, BoundaryType, LossType, PressureNeuralNetwork, SourceType, SciannFunctionals, Accumulators
+from models.datastructures import ADENeuralNetwork, BoundaryCondition, BoundaryType, LossType, SourceType, SciannFunctionals, Accumulators
 from models.kernel_initializers import SineInitializer, first_layer_sine_init
 from setup.settings import Settings
 
@@ -65,9 +65,8 @@ def setupPinnModels(settings: Settings, funcs: SciannFunctionals, accs: Accumula
         acc_norm = settings.network.ade_nn.accumulator_norm
 
         BC_left,BC_right = freqDependentBCLosses(funcs,rho,accs,boundary_condition,p_nn_weights,acc_norm)
-
-        phi_acc, psi0_acc, psi1_acc = accs.phi, accs.psi0, accs.psi1        
-        ODE_phi_0, ODE_phi_1, ODE_psi0_0, ODE_psi1_0 = odeLoss(funcs,boundary_condition,ade_nn_weights,acc_norm,phi_acc,psi0_acc,psi1_acc,'lr')
+        
+        ADE_phi_0, ADE_phi_1, ADE_psi0_0, ADE_psi1_0 = adeLoss(funcs,boundary_condition,ade_nn_weights,acc_norm,accs,'lr')
     else:
         raise NotImplementedError()
 
@@ -80,7 +79,7 @@ def setupPinnModels(settings: Settings, funcs: SciannFunctionals, accs: Accumula
     if boundary_condition.type == BoundaryType.IMPEDANCE_FREQ_DEP:
         targets = [PDE_p, 
             BC_left,BC_right,
-            ODE_phi_0, ODE_phi_1, ODE_psi0_0, ODE_psi1_0,
+            ADE_phi_0, ADE_phi_1, ADE_psi0_0, ADE_psi1_0,
             IC_t, IC]
     elif boundary_condition.type == BoundaryType.DIRICHLET:
         targets = [PDE_p, BC, IC_t, IC]
@@ -131,16 +130,16 @@ def setupPinnTargetsTrain(data: DataGeneratorXT, target_indxs: NamedTuple, bound
     IC_ENUM = target_indxs.ic
     BC_LEFT_ENUM = target_indxs.bc_left
     BC_RIGHT_ENUM = target_indxs.bc_right
-    BCs = target_indxs.bc
+    BCs_ENUM = target_indxs.bc
     tdata = data.targets_data # ["domain", "ic", "bc-left", "bc-right", "bc", "point-source", "all"]
 
     if boundary_cond.type == BoundaryType.IMPEDANCE_FREQ_DEP:
         return [tdata[DOMAIN_ENUM], 
             tdata[BC_LEFT_ENUM], tdata[BC_RIGHT_ENUM],
-            tdata[BCs],tdata[BCs],tdata[BCs],tdata[BCs], # aux differential equations
+            tdata[BCs_ENUM],tdata[BCs_ENUM],tdata[BCs_ENUM],tdata[BCs_ENUM], # aux differential equations
             tdata[IC_ENUM],tdata[IC_ENUM]] # [IC_t, IC]
     elif boundary_cond.type == BoundaryType.DIRICHLET:
-        return [tdata[DOMAIN_ENUM], tdata[BCs],
+        return [tdata[DOMAIN_ENUM], tdata[BCs_ENUM],
             tdata[IC_ENUM],tdata[IC_ENUM]] # [IC_t, IC]
     else:        
         return [tdata[DOMAIN_ENUM],
@@ -184,7 +183,7 @@ def setAccumulatorsTraineable(acc: Accumulators, traineable: bool):
     acc.psi0[0].set_trainable(traineable)
     acc.psi1[0].set_trainable(traineable)
 
-def setupNN_ODE(funcs: SciannFunctionals, nn: ADENeuralNetwork):
+def setupNN_ADE(funcs: SciannFunctionals, nn: ADENeuralNetwork):
 
     if nn.activation.lower() == "relu" or nn.activation.lower() == "elu":
         initializer = tf.keras.initializers.HeNormal()
@@ -212,16 +211,17 @@ def pdeLoss(funcs,c,weights):
 
     return PDE
 
-def odeLoss(funcs,boundary_cond,weights,acc_factors,phi_acc,psi0_acc,psi1_acc,tag_location):
+def adeLoss(funcs,boundary_cond,weights,acc_norms,accs,tag_location):
     ws_ade = weights.ade
     impedance_data = boundary_cond.impedance_data
-    t,p = funcs.x, funcs.p
+    phi_acc, psi0_acc, psi1_acc = accs.phi, accs.psi0, accs.psi1
+    t,p = funcs.t, funcs.p
 
     lambdas = impedance_data.lambdas
     alpha = impedance_data.alpha
     beta  = impedance_data.beta
 
-    phi_norm_0,phi_norm_1,psi_norm0_0,psi_norm1_0 = acc_factors[0],acc_factors[1],acc_factors[2],acc_factors[3]
+    phi_norm_0,phi_norm_1,psi_norm0_0,psi_norm1_0 = acc_norms[0],acc_norms[1],acc_norms[2],acc_norms[3]
 
     phi_0 = phi_acc[0]
     phi_1 = phi_acc[1]
@@ -233,10 +233,10 @@ def odeLoss(funcs,boundary_cond,weights,acc_factors,phi_acc,psi0_acc,psi1_acc,ta
     psi0_0_t = sn.math.diff(psi0_0, t, order=1)
     psi1_0_t = sn.math.diff(psi1_0, t, order=1)
     
-    ODE_phi_0  = phi_0_t + lambdas[0]*phi_0 - phi_norm_0*p
-    ODE_phi_1  = phi_1_t + lambdas[1]*phi_1 - phi_norm_1*p
-    ODE_psi0_0 = psi0_0_t + alpha[0]*psi0_0 + psi_norm0_0*(1/psi_norm1_0)*beta[0]*psi1_0 - psi_norm0_0*p
-    ODE_psi1_0 = psi1_0_t + alpha[0]*psi1_0 - psi_norm1_0*(1/psi_norm0_0)*beta[0]*psi0_0
+    ADE_phi_0  = phi_0_t + lambdas[0]*phi_0 - phi_norm_0*p
+    ADE_phi_1  = phi_1_t + lambdas[1]*phi_1 - phi_norm_1*p
+    ADE_psi0_0 = psi0_0_t + alpha[0]*psi0_0 + psi_norm0_0*(1/psi_norm1_0)*beta[0]*psi1_0 - psi_norm0_0*p
+    ADE_psi1_0 = psi1_0_t + alpha[0]*psi1_0 - psi_norm1_0*(1/psi_norm0_0)*beta[0]*psi0_0
 
     # the weights are adjusted w.r.t. the normalization factor (which also impacts the relative loss)
     w0 = ws_ade[0]*(1/phi_norm_0)
@@ -244,12 +244,12 @@ def odeLoss(funcs,boundary_cond,weights,acc_factors,phi_acc,psi0_acc,psi1_acc,ta
     w0_0 = ws_ade[2]*(1/psi_norm0_0)
     w0_1 = ws_ade[3]*(1/psi_norm1_0)
 
-    ODE_phi_0 = sn.rename(w0*ODE_phi_0, f'ODE_phi_0_{tag_location}')
-    ODE_phi_1 = sn.rename(w1*ODE_phi_1, f'ODE_phi_1_{tag_location}')
-    ODE_psi0_0 = sn.rename(w0_0*ODE_psi0_0, f'ODE_psi0_0_{tag_location}')
-    ODE_psi1_0 = sn.rename(w0_1*ODE_psi1_0, f'ODE_psi1_0_{tag_location}')
+    ADE_phi_0 = sn.rename(w0*ADE_phi_0, f'ADE_phi_0_{tag_location}')
+    ADE_phi_1 = sn.rename(w1*ADE_phi_1, f'ADE_phi_1_{tag_location}')
+    ADE_psi0_0 = sn.rename(w0_0*ADE_psi0_0, f'ADE_psi0_0_{tag_location}')
+    ADE_psi1_0 = sn.rename(w0_1*ADE_psi1_0, f'ADE_psi1_0_{tag_location}')
 
-    return ODE_phi_0, ODE_phi_1, ODE_psi0_0, ODE_psi1_0
+    return ADE_phi_0, ADE_phi_1, ADE_psi0_0, ADE_psi1_0
 
 def dirichletBCLosses(p,boundary_cond,weights):
     w_bc = weights.bc
@@ -286,7 +286,7 @@ def freqIndependentBCLosses(funcs,c,boundary_cond,weights):
 
     return BC_left, BC_right
 
-def freqDependentBCLosses(funcs,rho,acc,boundary_cond,weights,acc_factors):    
+def freqDependentBCLosses(funcs,rho,acc,boundary_cond,weights,acc_norm):    
     w_bc = weights.bc
     impedance_data = boundary_cond.impedance_data
     x,t,p = funcs.x, funcs.t, funcs.p
@@ -298,7 +298,7 @@ def freqDependentBCLosses(funcs,rho,acc,boundary_cond,weights,acc_factors):
 
     phi_acc, psi0_acc, psi1_acc = acc.phi, acc.psi0, acc.psi1
 
-    phi_denorm_0,phi_denorm_1,psi_denorm0_0,psi_denorm1_0 = 1/acc_factors[0],1/acc_factors[1],1/acc_factors[2],1/acc_factors[3]
+    phi_denorm_0,phi_denorm_1,psi_denorm0_0,psi_denorm1_0 = 1/acc_norm[0],1/acc_norm[1],1/acc_norm[2],1/acc_norm[3]
 
     # normal velocity at the boundary
     vn = Yinf*p + phi_denorm_0*A[0]*phi_acc[0] + phi_denorm_1*A[1]*phi_acc[1] + 2*(psi_denorm0_0*B[0]*psi0_acc[0] + psi_denorm1_0*C[0]*psi1_acc[0])

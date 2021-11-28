@@ -15,7 +15,7 @@ def setupPinnModelFromWeights(weights_path: str, settings: Settings, loss_type=L
         raise FileNotFoundError('Weights not found on disk')
     
     funcs = models.setupNN_PDE(settings)
-    accs = models.setupNN_ODE(funcs, settings.network.ade_nn) if settings.domain.boundary_cond.type == BoundaryType.IMPEDANCE_FREQ_DEP else None
+    accs = models.setupNN_ADE(funcs, settings.network.ade_nn) if settings.domain.boundary_cond.type == BoundaryType.IMPEDANCE_FREQ_DEP else None
     m = models.setupPinnModels(settings, funcs, accs, loss_type=loss_type)
     m.load_weights(weights_path)
 

@@ -60,7 +60,7 @@ def train(settings_path):
 
     ### TRAIN AND EVALUATE ###
     funcs = models.setupNN_PDE(settings)
-    accs = models.setupNN_ODE(funcs, settings.network.ade_nn) if settings.domain.boundary_cond.type == BoundaryType.IMPEDANCE_FREQ_DEP else None
+    accs = models.setupNN_ADE(funcs, settings.network.ade_nn) if settings.domain.boundary_cond.type == BoundaryType.IMPEDANCE_FREQ_DEP else None
 
     if settings.do_transfer_learning:
         m_pinn, targets_pinn = models.loadModel(settings, funcs, accs, data, target_indxs)

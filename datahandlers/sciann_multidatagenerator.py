@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 class MultiDataGenerator:
     """ Generates time-dependent collocation grid for training PINNs for multi-domains corresponding to e.g. different source positions.
     # Arguments:
-      data_gen: the type of data generator to use. Can be any dimension, but include time dimension.
+      data_gen: the type of data generator to use. Can be any dimensions including time.
     """
 
     def __init__(self,num_grids,data_generator):
@@ -62,7 +62,7 @@ class MultiDataGenerator:
 
     @property
     def targets_data(self):
-        targets_data = [(np.array([], dtype=int),'zeros') for i in range(len(self.gen.targets))]
+        targets_data = [(np.array([], dtype=int),'zeros') for _ in range(len(self.gen.targets))]
 
         for i in range(self.num_grids):
             _, target_data = self[i]

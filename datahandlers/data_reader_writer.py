@@ -66,7 +66,10 @@ def loadDataFromH5(path_data, tmax=None):
             x = x_mesh[:ilast+1,:].tolist()
             grid = [x,t]
 
-        sols = sols[:,:ilast+1,:].tolist()
+        if len(sols.shape) == 2:
+            sols = [sols[:ilast+1,:].tolist()]
+        else:
+            sols = sols[:,:ilast+1,:].tolist()
 
         assert len(sols[0]) == len(grid[0])
         assert len(sols[0][0]) == len(grid[0][0])
