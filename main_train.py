@@ -10,7 +10,7 @@ import sys
 sys.path.append('..') # needed unless installing forked lib from github
 
 import argparse
-import run.run_pinn_model as pinn_model
+import run_pinn_model as pinn_model
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--path_settings", type=str, required=True)

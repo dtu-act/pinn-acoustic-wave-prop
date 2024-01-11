@@ -62,6 +62,6 @@
         "ade":[10,10,10,10]
     },
 
-    "verbose_out": false,
+    "verbose_out": true,
     "show_plots": false
 }

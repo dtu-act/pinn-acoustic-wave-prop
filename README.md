@@ -1,10 +1,20 @@
 > Authors:
-> * Nikolas Borrel (<nibor@elektro.dtu.dk>)
+> * Nikolas Borrel-Jensen (<nikolasborrel@gmail.com>)
 > * Allan P. Engsig-Karup (<apek@dtu.dk>)
-> * Cheol-Ho Jeong (<chj@elektro.dtu.dk>)
+> * Cheol-Ho Jeong (<chje@dtu.dk>)
 
 # About
 Code for sound field predictions in domains with Neumann and impedance boundaries. Used for generating results from the paper "Physics-informed neural networks for 1D sound field predictions with parameterized sources and impedance boundaries" by N. Borrel-Jensen, A. P. Engsig-Karup, and C. Jeong.
+
+# Installation
+This code is dependent on the [SciANN](https://github.com/sciann/sciann) library, which is not maintained anymore after version `0.7.0.1`. SciANN is a wrapper around Tensorflow and Keras and the last test are based on `python==3.9` and `tensorflow==2.10`. This means, that macs running on M2 silicon are not compatible with the code (requires `tensorflow==2.13+`).
+
+You can install the required library versions used for reproducing the results from the paper with `pip` as (with `--user` argument if sudo access is not possible):
+
+```
+pip3 install --user tensorflow==2.5.1 sciann==0.6.4.7 python==3.8 matplotlib smt pydot graphviz
+```
+and/or using the `./requirements.txt` file located in the root directory.
 
 # Run
 ## Train
@@ -66,7 +76,7 @@ base_dir/
         ...
     ...
 ```
-The reference data from the paper can be downloaded [here](http://www.todo.com). The reference data is generated using an SEM solver for impedance boundaries, whereas the Python script `main_generate_analytical_data.py` was used for Neumann boundaries.
+The reference data from the paper can be downloaded [here](https://data.dtu.dk/articles/dataset/Reference_solutions_trained_models/17078339). The reference data is generated using an SEM solver for impedance boundaries, whereas the Python script `main_generate_analytical_data.py` was used for Neumann boundaries.
 
 Note: the folder `reference_data` should be named exactly as stated.
 
@@ -86,7 +96,7 @@ base_dir/
 ```
  The `settings.json` file is identical to the settings file used for training indicated by the ``--path_settings`` argument. The directory `LossType.PINN` contains the trained model weights.
 
-The results from the paper can be downloaded here [here](http://www.todo.com) and should be placed inside the `results` directory (run `python3 main_evaluate.py` to evaluate).
+The results from the paper can be downloaded here [here](https://data.dtu.dk/articles/dataset/Reference_solutions_trained_models/17078339) and should be placed inside the `results` directory (run `python3 main_evaluate.py` to evaluate).
 
 For transfer learning, the model to continue the training on, should be located
 ```verbatim

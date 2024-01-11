@@ -92,3 +92,6 @@ def train(settings_path):
 
     if settings.show_plots:
         plt.show()
+
+# settings_path = "scripts/settings/freq_indep_1D.json"
+# train(settings_path)

@@ -40,6 +40,6 @@
         "bc":1
     },
 
-    "verbose_out": false,
+    "verbose_out": true,
     "show_plots": false
 }
